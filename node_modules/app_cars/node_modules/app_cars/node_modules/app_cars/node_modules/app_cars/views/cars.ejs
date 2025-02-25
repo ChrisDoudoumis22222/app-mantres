@@ -1,4 +1,4 @@
-<!-- views/cars.ejs --> 
+<!-- views/cars.ejs -->
 <!DOCTYPE html>
 <html lang="el">
 <head>
@@ -380,28 +380,24 @@
                             <div class="card-body d-flex flex-column">
                                 <h5 class="card-title"><%= car.title %></h5>
                                 <p class="card-text"><strong>Τιμή:</strong> €<%= car.price.toLocaleString('el-GR') %></p>
-                                <% if (car.priceWithoutTax !== null) { %>
+                                <% if (car.priceWithoutTax != null) { %>
                                     <p class="card-text"><strong>Τιμή Χωρίς Φόρο:</strong> €<%= car.priceWithoutTax.toLocaleString('el-GR') %></p>
                                 <% } else { %>
                                     <p class="card-text"><strong>Τιμή Χωρίς Φόρο:</strong> Δε Διατίθεται</p>
-                                <% } %>
+                                <% } %>                                
                                 <p class="card-text"><strong>Έτος:</strong> <%= (car.year !== "Unknown") ? car.year : 'Δε Διατίθεται' %></p>
                                 <p class="card-text"><strong>Χιλιόμετρα:</strong> <%= car.mileage ? car.mileage.toLocaleString('el-GR') : 'Δε Διατίθεται' %> km</p>
                                 <p class="card-text"><strong>Ισχύς:</strong> <%= (car.power !== null) ? car.power + ' kW' : 'Δε Διατίθεται' %></p>
                                 <p class="card-text"><strong>Τύπος Καυσίμου:</strong> <%= (car.fuelType !== "Δε Διατίθεται") ? car.fuelType : 'Δε Διατίθεται' %></p>
-                                
                                 <!-- Transmission Field -->
                                 <p class="card-text"><strong>Μετάδοση:</strong> <%= car.transmission !== "Δε Διατίθεται" ? car.transmission : 'Δε Διατίθεται' %></p>
-                                
                                 <p class="card-text"><strong>Αριθμός Πόρτας:</strong> <%= car.doors %></p>
                                 <p class="card-text"><strong>Τύπος Κινητήρα:</strong> <%= (car.engineType !== "Δε Διατίθεται") ? car.engineType : 'Δε Διατίθεται' %></p>
                                 <p class="card-text"><strong>Τύπος Σώματος:</strong> <%= (car.bodyType !== "Δε Διατίθεται") ? car.bodyType : 'Δε Διατίθεται' %></p>
                                 <p class="card-text"><strong>Κατάσταση:</strong> <%= car.condition %></p>
-                                
                                 <% if (car.tags && car.tags.length > 0) { %>
                                     <p class="card-text"><strong>Χαρακτηριστικά:</strong> <%= car.tags.join(', ') %></p>
                                 <% } %>
-                                
                                 <!-- Image Thumbnails -->
                                 <p class="card-text"><strong>Διαθέσιμες Εικόνες:</strong></p>
                                 <div class="d-flex flex-wrap mb-3">
@@ -427,7 +423,7 @@
                 <ul class="pagination justify-content-center">
                     <% if (currentPage > 1) { %>
                         <li class="page-item">
-                            <a class="page-link" href="/?<%= buildQueryString({ ...filters, page: currentPage - 1 }) %>" aria-label="Προηγούμενη">
+                            <a class="page-link" href="/?<%= buildQueryString(Object.assign({}, filters, { page: currentPage - 1 })) %>" aria-label="Προηγούμενη">
                                 <span aria-hidden="true">&laquo;</span>
                             </a>
                         </li>
@@ -444,7 +440,7 @@
 
                     <% if (startPage > 1) { %>
                         <li class="page-item">
-                            <a class="page-link" href="/?<%= buildQueryString({ ...filters, page: 1 }) %>">1</a>
+                            <a class="page-link" href="/?<%= buildQueryString(Object.assign({}, filters, { page: 1 })) %>">1</a>
                         </li>
                         <% if (startPage > 2) { %>
                             <li class="page-item disabled">
@@ -455,7 +451,7 @@
 
                     <% for (let i = startPage; i <= endPage; i++) { %>
                         <li class="page-item <%= currentPage === i ? 'active' : '' %>">
-                            <a class="page-link" href="/?<%= buildQueryString({ ...filters, page: i }) %>"><%= i %></a>
+                            <a class="page-link" href="/?<%= buildQueryString(Object.assign({}, filters, { page: i })) %>"><%= i %></a>
                         </li>
                     <% } %>
 
@@ -466,13 +462,13 @@
                             </li>
                         <% } %>
                         <li class="page-item">
-                            <a class="page-link" href="/?<%= buildQueryString({ ...filters, page: totalPages }) %>"><%= totalPages %></a>
+                            <a class="page-link" href="/?<%= buildQueryString(Object.assign({}, filters, { page: totalPages })) %>"><%= totalPages %></a>
                         </li>
                     <% } %>
 
                     <% if (currentPage < totalPages) { %>
                         <li class="page-item">
-                            <a class="page-link" href="/?<%= buildQueryString({ ...filters, page: currentPage + 1 }) %>" aria-label="Επόμενη">
+                            <a class="page-link" href="/?<%= buildQueryString(Object.assign({}, filters, { page: currentPage + 1 })) %>" aria-label="Επόμενη">
                                 <span aria-hidden="true">&raquo;</span>
                             </a>
                         </li>

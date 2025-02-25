@@ -59,186 +59,90 @@ const extractMainModel = (fullModel) => {
 // 4. Mapping Functions for JSON Data
 // ----------------------
 
-// Mapping for cars.json
+// UPDATED mapping for cars.json (and also for kleinanzegencars.json) to match your JSON structure
 function mapCarsJson(car) {
   try {
-    const titleParts = car.title.split(' ');
-    const brand = titleParts[0] || 'Unknown';
-    const fullModel = titleParts.slice(1).join(' ') || 'Unknown';
-    const model = extractMainModel(fullModel);
+    // Use the "title" field and derive brand & model.
+    const title = car.title || 'No Title';
+    const brand = car.brand || title.split(' ')[0] || 'No Brand';
+    const model = title.split(' ').slice(1).join(' ') || 'No Model';
 
+    // Price: Use numeric "price" if available; otherwise parse "priceText"
     let price = 0;
-    if (car.price && typeof car.price === 'string') {
-      const sanitizedPrice = car.price.replace(/[^0-9.,]/g, '').replace(',', '.');
-      price = parseFloat(sanitizedPrice);
-      if (isNaN(price)) price = 0;
+    if (typeof car.price === 'number') {
+      price = car.price;
+    } else if (car.priceText && typeof car.priceText === 'string') {
+      const priceStr = car.priceText.replace(/[^0-9,\.]/g, '').replace(',', '.');
+      price = parseFloat(priceStr) || 0;
     }
 
-    let priceWithoutTax = null;
-    if (
-      car.priceWithoutTax &&
-      typeof car.priceWithoutTax === 'string' &&
-      !['not deductible', 'δε διατίθεται'].includes(
-        car.priceWithoutTax.toLowerCase()
-      )
-    ) {
-      const sanitizedPriceWithoutTax = car.priceWithoutTax
-        .replace(/[^0-9.,]/g, '')
-        .replace(',', '.');
-      priceWithoutTax = parseFloat(sanitizedPriceWithoutTax);
-      if (isNaN(priceWithoutTax)) priceWithoutTax = null;
-    }
-
-    let power = null;
-    if (car.power && typeof car.power === 'string') {
-      const powerMatch = car.power.match(/(\d+)\s*kW/i);
-      if (powerMatch) {
-        power = parseInt(powerMatch[1], 10);
-      }
-    }
-
-    let year = 'Unknown';
-    if (car.registrationDate && typeof car.registrationDate === 'string') {
-      const dateParts = car.registrationDate.split('/');
-      if (dateParts.length === 2) {
-        const parsedYear = parseInt(dateParts[1], 10);
-        year = isNaN(parsedYear) ? 'Unknown' : parsedYear;
-      } else if (dateParts.length === 1) {
-        const parsedYear = parseInt(dateParts[0], 10);
-        year = isNaN(parsedYear) ? 'Unknown' : parsedYear;
-      }
-    }
-
+    // Mileage: Extract digits from a string like "126.250 km"
     let mileage = null;
     if (car.mileage && typeof car.mileage === 'string') {
-      const mileageMatch = car.mileage.match(/([\d.,]+)\s*km/i);
+      const mileageMatch = car.mileage.match(/([\d.,]+)/);
       if (mileageMatch) {
-        mileage = parseInt(mileageMatch[1].replace(/[^0-9]/g, ''), 10);
+        mileage = parseInt(mileageMatch[1].replace(/\./g, ''), 10);
       }
     }
 
-    const transmission =
-      car.transmission && typeof car.transmission === 'string'
-        ? car.transmission
-        : 'Δε Διατίθεται';
+    // Transmission: Use as given.
+    const transmission = car.transmission || 'N/A';
 
-    const fuelType =
-      car.fuelType && typeof car.fuelType === 'string'
-        ? car.fuelType
-        : 'Δε Διατίθεται';
+    // Year: Extract a 4-digit year from a string such as "Juni 2004"
+    let year = 'Unknown';
+    if (car.year && typeof car.year === 'string') {
+      const yearMatch = car.year.match(/(\d{4})/);
+      if (yearMatch) {
+        year = parseInt(yearMatch[1], 10);
+      }
+    }
 
-    const tags = Array.isArray(car.tags) ? car.tags : [];
-    const additionalTags = Array.isArray(car.additionalTags)
-      ? car.additionalTags
-      : [];
-    const allTags = [...tags, ...additionalTags];
+    // Fuel: Use the "fuel" field (e.g., "Benzin")
+    const fuelType = car.fuel || 'N/A';
 
-    const deliveryInfo =
-      car.deliveryInfo && typeof car.deliveryInfo === 'object'
-        ? {
-            label: car.deliveryInfo.label || '',
-            price: car.deliveryInfo.price || '',
-          }
-        : { label: '', price: '' };
+    // Power: Extract the numeric value from "power" (supports kW or PS)
+    let power = null;
+    if (car.power && typeof car.power === 'string') {
+      let match = car.power.match(/(\d+)\s*kW/i);
+      if (!match) {
+        match = car.power.match(/(\d+)\s*PS/i);
+      }
+      if (match) {
+        power = parseInt(match[1], 10);
+      }
+    }
 
+    // Images: Use the "images" array; if empty, provide a placeholder.
     let images = [];
     if (Array.isArray(car.images) && car.images.length > 0) {
-      images = car.images.map((img) =>
-        typeof img === 'string'
-          ? img.split(' ')[0]
-          : 'https://via.placeholder.com/300x200?text=No+Image'
-      );
-    } else if (car.imageUrl && typeof car.imageUrl === 'string') {
-      images = [car.imageUrl];
+      images = car.images;
     } else {
       images = ['https://via.placeholder.com/300x200?text=No+Image'];
     }
+    const hasImage = images.length > 0 && !images[0].includes('https://via.placeholder.com');
 
-    const hasImage =
-      images.length > 0 && !images[0].includes('https://via.placeholder.com');
-
-    const color =
-      car.color && typeof car.color === 'string'
-        ? car.color
-        : 'Δε Διατίθεται';
-
-    const country =
-      car.country && typeof car.country === 'string'
-        ? car.country
-        : 'Δε Διατίθεται';
-
-    let doors = 4;
-    const doorTag = allTags.find(
-      (tag) =>
-        typeof tag === 'string' &&
-        (tag.toLowerCase().includes('door') ||
-          tag.toLowerCase().includes('πόρτα'))
-    );
-    if (doorTag) {
-      const doorsMatch = doorTag.match(/(\d+)/);
-      if (doorsMatch) {
-        doors = parseInt(doorsMatch[1], 10);
-      }
-    }
-
-    let bodyType = 'Δε Διατίθεται';
-    const possibleBodyTypes = [
-      'Sedan',
-      'Hatchback',
-      'SUV',
-      'Coupe',
-      'Convertible',
-      'Van',
-      'Wagon',
-      'Truck',
-    ];
-    for (const type of possibleBodyTypes) {
-      if (allTags.includes(type)) {
-        bodyType = type;
-        break;
-      }
-    }
-
-    let engineType = 'Δε Διατίθεται';
-    const possibleEngineTypes = ['Petrol', 'Diesel', 'Electric', 'Hybrid'];
-    for (const type of possibleEngineTypes) {
-      if (fuelType.toLowerCase().includes(type.toLowerCase())) {
-        engineType = type;
-        break;
-      }
-    }
-
-    let condition = 'Used';
-    if (car.condition && typeof car.condition === 'string') {
-      condition = car.condition;
-    }
+    // Optionally, extract additional details from the "detailPageData" object.
+    const location = car.detailPageData && car.detailPageData.location
+      ? car.detailPageData.location
+      : 'Unknown';
 
     return {
-      title: car.title || 'Δε Διατίθεται',
+      title,
       link: car.link || '#',
-      price: price || 0,
-      priceWithoutTax: priceWithoutTax,
-      power: power,
-      year: year,
-      mileage: mileage,
-      transmission: transmission,
-      fuelType: fuelType,
-      condition: condition,
-      tags: allTags,
-      deliveryInfo: deliveryInfo,
-      images: images,
-      brand: brand || 'Δε Διατίθεται',
-      model: model || 'Δε Διατίθεται',
-      color: color,
-      country: country,
-      doors: doors,
-      bodyType: bodyType,
-      engineType: engineType,
-      hasImage: hasImage,
+      price,
+      mileage,
+      transmission,
+      year,
+      fuelType,
+      power,
+      images,
+      hasImage,
+      brand,
+      model,
+      location,
     };
   } catch (error) {
-    console.error('Error mapping cars.json entry:', car);
-    console.error(error);
+    console.error('Error mapping car:', car, error);
     return null;
   }
 }
@@ -380,7 +284,6 @@ function mapCarsParkingJson(car) {
   }
 }
 
-// Mapping for caaarrssssss.json
 function mapCaaarrssssssJson(car) {
   try {
     let price = 0;
@@ -517,7 +420,6 @@ function mapCaaarrssssssJson(car) {
   }
 }
 
-// Mapping for openlane.json
 function mapOpenLaneJson(car) {
   try {
     const nameParts =
@@ -625,7 +527,6 @@ function mapOpenLaneJson(car) {
   }
 }
 
-// Mapping for hertzcars.json
 function mapHertzCarsJson(car) {
   try {
     const title =
@@ -702,7 +603,6 @@ function mapHertzCarsJson(car) {
   }
 }
 
-// Mapping for autoscoutcars.json
 function mapAutoscoutCarsJson(car) {
   try {
     const rawTitle =
@@ -813,7 +713,6 @@ function mapAutoscoutCarsJson(car) {
   }
 }
 
-// Mapping for aclass.json
 function mapAClassJson(car) {
   try {
     const title =
@@ -954,6 +853,8 @@ function loadCarsFromFileInChunks(filePath, mapFn) {
 // ----------------------
 async function loadAllCars() {
   const dataDir = path.join(__dirname, 'data');
+
+  // Previous JSON files
   const carsJsonPath = path.join(dataDir, 'cars.json');
   const carsParkingJsonPath = path.join(dataDir, 'carsparking.json');
   const caaarrssssssJsonPath = path.join(dataDir, 'caaarrssssss.json');
@@ -963,6 +864,9 @@ async function loadAllCars() {
   const autoscoutcarsJsonPath = path.join(dataDir, 'autoscoutcars.json');
   const aclassJsonPath = path.join(dataDir, 'aclass.json');
 
+  // New JSON file with updated structure
+  const kleinanzeJsonPath = path.join(dataDir, 'kleinanzegencars.json');
+
   let carsJson = [];
   let carsParkingJson = [];
   let caaarrssssssJson = [];
@@ -971,6 +875,7 @@ async function loadAllCars() {
   let cargrJson = [];
   let autoscoutcarsJson = [];
   let aclassJson = [];
+  let kleinanzeJson = [];
 
   try {
     carsJson = await loadCarsFromFileInChunks(carsJsonPath, mapCarsJson);
@@ -1028,7 +933,15 @@ async function loadAllCars() {
     console.error('Error reading/streaming aclass.json:', err);
   }
 
+  try {
+    kleinanzeJson = await loadCarsFromFileInChunks(kleinanzeJsonPath, mapCarsJson);
+    console.log(`kleinanzegencars.json entries mapped: ${kleinanzeJson.length}`);
+  } catch (err) {
+    console.error('Error reading/streaming kleinanzegencars.json:', err);
+  }
+
   const allCars = [
+    ...kleinanzeJson,
     ...carsJson,
     ...carsParkingJson,
     ...caaarrssssssJson,
