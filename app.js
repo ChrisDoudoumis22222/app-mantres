@@ -27,19 +27,15 @@ app.use(bodyParser.urlencoded({ extended: false }));
 // ----------------------
 const buildQueryString = (filters) => {
   return Object.keys(filters)
-    .filter(
-      (key) =>
-        filters[key] !== undefined &&
-        filters[key] !== '' &&
-        filters[key].length !== 0
+    .filter((key) =>
+      filters[key] !== undefined &&
+      filters[key] !== '' &&
+      filters[key].length !== 0
     )
     .map((key) => {
       if (Array.isArray(filters[key])) {
         return filters[key]
-          .map(
-            (value) =>
-              `${encodeURIComponent(key)}=${encodeURIComponent(value)}`
-          )
+          .map((value) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
           .join('&');
       }
       return `${encodeURIComponent(key)}=${encodeURIComponent(filters[key])}`;
@@ -59,24 +55,21 @@ const extractMainModel = (fullModel) => {
 // 4. Mapping Functions for JSON Data
 // ----------------------
 
-// UPDATED mapping for cars.json (and also for kleinanzegencars.json) to match your JSON structure
+// 4.1 mapCarsJson (cars.json, kleinanzegencars.json, mobiledecars.json, cars2.json, etc.)
 function mapCarsJson(car) {
   try {
-    // Use the "title" field and derive brand & model.
     const title = car.title || 'No Title';
     const brand = car.brand || title.split(' ')[0] || 'No Brand';
     const model = title.split(' ').slice(1).join(' ') || 'No Model';
 
-    // Price: Use numeric "price" if available; otherwise parse "priceText"
     let price = 0;
     if (typeof car.price === 'number') {
       price = car.price;
-    } else if (car.priceText && typeof car.priceText === 'string') {
-      const priceStr = car.priceText.replace(/[^0-9,\.]/g, '').replace(',', '.');
+    } else if (car.price && typeof car.price === 'string') {
+      const priceStr = car.price.replace(/[^0-9,\.]/g, '').replace(',', '.');
       price = parseFloat(priceStr) || 0;
     }
 
-    // Mileage: Extract digits from a string like "126.250 km"
     let mileage = null;
     if (car.mileage && typeof car.mileage === 'string') {
       const mileageMatch = car.mileage.match(/([\d.,]+)/);
@@ -85,10 +78,8 @@ function mapCarsJson(car) {
       }
     }
 
-    // Transmission: Use as given.
     const transmission = car.transmission || 'N/A';
 
-    // Year: Extract a 4-digit year from a string such as "Juni 2004"
     let year = 'Unknown';
     if (car.year && typeof car.year === 'string') {
       const yearMatch = car.year.match(/(\d{4})/);
@@ -97,10 +88,8 @@ function mapCarsJson(car) {
       }
     }
 
-    // Fuel: Use the "fuel" field (e.g., "Benzin")
     const fuelType = car.fuel || 'N/A';
 
-    // Power: Extract the numeric value from "power" (supports kW or PS)
     let power = null;
     if (car.power && typeof car.power === 'string') {
       let match = car.power.match(/(\d+)\s*kW/i);
@@ -112,7 +101,6 @@ function mapCarsJson(car) {
       }
     }
 
-    // Images: Use the "images" array; if empty, provide a placeholder.
     let images = [];
     if (Array.isArray(car.images) && car.images.length > 0) {
       images = car.images;
@@ -121,10 +109,10 @@ function mapCarsJson(car) {
     }
     const hasImage = images.length > 0 && !images[0].includes('https://via.placeholder.com');
 
-    // Optionally, extract additional details from the "detailPageData" object.
-    const location = car.detailPageData && car.detailPageData.location
-      ? car.detailPageData.location
-      : 'Unknown';
+    const location =
+      car.detailPageData && car.detailPageData.location
+        ? car.detailPageData.location
+        : 'Unknown';
 
     return {
       title,
@@ -140,6 +128,9 @@ function mapCarsJson(car) {
       brand,
       model,
       location,
+      priceWithoutTax: typeof car.priceWithoutTax !== 'undefined'
+        ? car.priceWithoutTax
+        : null,
     };
   } catch (error) {
     console.error('Error mapping car:', car, error);
@@ -147,19 +138,16 @@ function mapCarsJson(car) {
   }
 }
 
-// Mapping for carsparking.json
+// 4.2 mapCarsParkingJson
 function mapCarsParkingJson(car) {
   try {
     let price = 0;
     if (car.price && typeof car.price === 'string') {
       const priceMatch = car.price.replace(',', '.').match(/([\d.,]+)/);
       if (priceMatch) {
-        price = parseFloat(
-          priceMatch[1].replace(/\./g, '').replace(',', '.')
-        );
+        price = parseFloat(priceMatch[1].replace(/\./g, '').replace(',', '.'));
       }
     }
-
     let power = null;
     if (car.power && typeof car.power === 'string') {
       const powerMatch = car.power.match(/(\d+)\s*kW/i);
@@ -167,7 +155,6 @@ function mapCarsParkingJson(car) {
         power = parseInt(powerMatch[1], 10);
       }
     }
-
     let year = 'Unknown';
     if (
       car.productionDate &&
@@ -177,7 +164,6 @@ function mapCarsParkingJson(car) {
       const parsedYear = parseInt(car.productionDate, 10);
       year = isNaN(parsedYear) ? 'Unknown' : parsedYear;
     }
-
     let mileage = null;
     if (
       car.mileage &&
@@ -186,13 +172,9 @@ function mapCarsParkingJson(car) {
     ) {
       const mileageMatch = car.mileage.match(/([\d.,]+)\s*km/i);
       if (mileageMatch) {
-        mileage = parseInt(
-          mileageMatch[1].replace(/\./g, '').replace(',', ''),
-          10
-        );
+        mileage = parseInt(mileageMatch[1].replace(/\./g, '').replace(',', ''), 10);
       }
     }
-
     let doors = 4;
     if (car.numberOfDoors && typeof car.numberOfDoors === 'string') {
       const doorsMatch = car.numberOfDoors.match(/(\d+)/);
@@ -200,24 +182,19 @@ function mapCarsParkingJson(car) {
         doors = parseInt(doorsMatch[1], 10);
       }
     }
-
     let engineType = 'Unknown';
     if (car.engineType && typeof car.engineType === 'string') {
       engineType = car.engineType;
     }
-
     let bodyType = 'Unknown';
     if (car.bodyType && typeof car.bodyType === 'string') {
       bodyType = car.bodyType;
     }
-
     let condition = 'Used';
     if (car.condition && typeof car.condition === 'string') {
       condition = car.condition;
     }
-
     const model = extractMainModel(car.model);
-
     let images = [];
     if (Array.isArray(car.images) && car.images.length > 0) {
       images = car.images;
@@ -226,8 +203,7 @@ function mapCarsParkingJson(car) {
     } else {
       images = ['https://via.placeholder.com/300x200?text=No+Image'];
     }
-    const hasImage =
-      images.length > 0 && !images[0].includes('https://via.placeholder.com');
+    const hasImage = images.length > 0 && !images[0].includes('https://via.placeholder.com');
 
     return {
       title: `${car.brand || 'Unknown'} ${car.model || 'Unknown'} ${
@@ -236,9 +212,9 @@ function mapCarsParkingJson(car) {
       link: car.url || '#',
       price: price || 0,
       priceWithoutTax: null,
-      power: power,
-      year: year,
-      mileage: mileage,
+      power,
+      year,
+      mileage,
       transmission:
         car.transmission && typeof car.transmission === 'string'
           ? car.transmission.trim()
@@ -247,7 +223,7 @@ function mapCarsParkingJson(car) {
         car.fuelType && typeof car.fuelType === 'string'
           ? car.fuelType.trim()
           : 'Unknown',
-      condition: condition,
+      condition,
       tags:
         car.description && typeof car.description === 'string'
           ? car.description
@@ -256,26 +232,19 @@ function mapCarsParkingJson(car) {
           : [],
       deliveryInfo:
         car.deliveryInfo && typeof car.deliveryInfo === 'object'
-          ? {
-              label: car.deliveryInfo.label || '',
-              price: car.deliveryInfo.price || '',
-            }
+          ? { label: car.deliveryInfo.label || '', price: car.deliveryInfo.price || '' }
           : { label: '', price: '' },
-      images: images,
+      images,
       brand: car.brand || 'Unknown',
       model: model || 'Unknown',
       color:
-        car.color && typeof car.color === 'string'
-          ? car.color
-          : 'Unknown',
+        car.color && typeof car.color === 'string' ? car.color : 'Unknown',
       country:
-        car.country && typeof car.country === 'string'
-          ? car.country
-          : 'Unknown',
-      doors: doors,
-      bodyType: bodyType,
-      engineType: engineType,
-      hasImage: hasImage,
+        car.country && typeof car.country === 'string' ? car.country : 'Unknown',
+      doors,
+      bodyType,
+      engineType,
+      hasImage,
     };
   } catch (error) {
     console.error('Error mapping carsparking.json entry:', car);
@@ -284,18 +253,16 @@ function mapCarsParkingJson(car) {
   }
 }
 
+// 4.3 mapCaaarrssssssJson
 function mapCaaarrssssssJson(car) {
   try {
     let price = 0;
     if (car.price && typeof car.price === 'string') {
       const priceMatch = car.price.replace(',', '.').match(/([\d.,]+)/);
       if (priceMatch) {
-        price = parseFloat(
-          priceMatch[1].replace(/\./g, '').replace(',', '.')
-        );
+        price = parseFloat(priceMatch[1].replace(/\./g, '').replace(',', '.'));
       }
     }
-
     let power = null;
     if (car.power && typeof car.power === 'string') {
       const powerMatch = car.power.match(/(\d+)\s*kW/i);
@@ -303,7 +270,6 @@ function mapCaaarrssssssJson(car) {
         power = parseInt(powerMatch[1], 10);
       }
     }
-
     let year = 'Unknown';
     if (car.registrationDate && typeof car.registrationDate === 'string') {
       const dateParts = car.registrationDate.split('/');
@@ -312,54 +278,42 @@ function mapCaaarrssssssJson(car) {
         year = isNaN(parsedYear) ? 'Unknown' : parsedYear;
       }
     }
-
     let mileage = null;
     if (car.mileage && typeof car.mileage === 'string') {
       const mileageMatch = car.mileage.match(/([\d.,]+)\s*km/i);
       if (mileageMatch) {
-        mileage = parseInt(
-          mileageMatch[1].replace(/\./g, '').replace(',', ''),
-          10
-        );
+        mileage = parseInt(mileageMatch[1].replace(/\./g, '').replace(',', ''), 10);
       }
     }
-
     let doors = 4;
     if (
       car.tags &&
       Array.isArray(car.tags) &&
       car.tags.some(
-        (tag) =>
-          typeof tag === 'string' && tag.toLowerCase().includes('door')
+        (tag) => typeof tag === 'string' && tag.toLowerCase().includes('door')
       )
     ) {
       const doorsTag = car.tags.find(
-        (tag) =>
-          typeof tag === 'string' && tag.toLowerCase().includes('door')
+        (tag) => typeof tag === 'string' && tag.toLowerCase().includes('door')
       );
       const doorsMatch = doorsTag.match(/(\d+)/);
       if (doorsMatch) {
         doors = parseInt(doorsMatch[1], 10);
       }
     }
-
     let engineType = 'Unknown';
     if (car.engineType && typeof car.engineType === 'string') {
       engineType = car.engineType;
     }
-
     let bodyType = 'Unknown';
     if (car.bodyType && typeof car.bodyType === 'string') {
       bodyType = car.bodyType;
     }
-
     let condition = 'Used';
     if (car.condition && typeof car.condition === 'string') {
       condition = car.condition;
     }
-
     const model = extractMainModel(car.model);
-
     let images = [];
     if (Array.isArray(car.images) && car.images.length > 0) {
       images = car.images;
@@ -368,18 +322,18 @@ function mapCaaarrssssssJson(car) {
     } else {
       images = ['https://via.placeholder.com/300x200?text=No+Image'];
     }
-    const hasImage =
-      images.length > 0 && !images[0].includes('https://via.placeholder.com');
+    const hasImage = images.length > 0 && !images[0].includes('https://via.placeholder.com');
 
     return {
-      title: `${car.brand || 'Unknown'} ${car.model || 'Unknown'} ${car.engine || ''}`
-        .trim() || 'Unknown',
+      title: `${car.brand || 'Unknown'} ${car.model || 'Unknown'} ${
+        car.engine || ''
+      }`.trim() || 'Unknown',
       link: car.url || '#',
       price: price || 0,
       priceWithoutTax: null,
-      power: power,
-      year: year,
-      mileage: mileage,
+      power,
+      year,
+      mileage,
       transmission:
         car.transmission && typeof car.transmission === 'string'
           ? car.transmission.trim()
@@ -388,30 +342,23 @@ function mapCaaarrssssssJson(car) {
         car.fuelType && typeof car.fuelType === 'string'
           ? car.fuelType.trim()
           : 'Unknown',
-      condition: condition,
+      condition,
       tags: Array.isArray(car.tags) ? car.tags : [],
       deliveryInfo:
         car.deliveryInfo && typeof car.deliveryInfo === 'object'
-          ? {
-              label: car.deliveryInfo.label || '',
-              price: car.deliveryInfo.price || '',
-            }
+          ? { label: car.deliveryInfo.label || '', price: car.deliveryInfo.price || '' }
           : { label: '', price: '' },
-      images: images,
+      images,
       brand: car.brand || 'Unknown',
       model: model || 'Unknown',
       color:
-        car.color && typeof car.color === 'string'
-          ? car.color
-          : 'Unknown',
+        car.color && typeof car.color === 'string' ? car.color : 'Unknown',
       country:
-        car.country && typeof car.country === 'string'
-          ? car.country
-          : 'Unknown',
-      doors: doors,
-      bodyType: bodyType,
-      engineType: engineType,
-      hasImage: hasImage,
+        car.country && typeof car.country === 'string' ? car.country : 'Unknown',
+      doors,
+      bodyType,
+      engineType,
+      hasImage,
     };
   } catch (error) {
     console.error('Error mapping caaarrssssss.json entry:', car);
@@ -420,13 +367,14 @@ function mapCaaarrssssssJson(car) {
   }
 }
 
+// 4.4 mapOpenLaneJson
 function mapOpenLaneJson(car) {
   try {
-    const nameParts =
-      car.name && typeof car.name === 'string' ? car.name.split(' ') : [];
+    const nameParts = car.name && typeof car.name === 'string'
+      ? car.name.split(' ')
+      : [];
     const brand = nameParts[0] || 'Unknown';
-    const fullModel =
-      nameParts.slice(1, nameParts.length - 1).join(' ') || 'Unknown';
+    const fullModel = nameParts.slice(1, nameParts.length - 1).join(' ') || 'Unknown';
     const model = extractMainModel(fullModel);
 
     let price = 0;
@@ -464,9 +412,7 @@ function mapOpenLaneJson(car) {
     let mileage = null;
     let doors = 4;
     let bodyType =
-      car.carType && typeof car.carType === 'string'
-        ? car.carType
-        : 'Unknown';
+      car.carType && typeof car.carType === 'string' ? car.carType : 'Unknown';
     let engineType = 'Unknown';
     if (fuelType.toLowerCase() === 'diesel') {
       engineType = 'Diesel';
@@ -481,44 +427,47 @@ function mapOpenLaneJson(car) {
 
     let priceWithoutTax = null;
     if (car.originalPrice && typeof car.originalPrice === 'string' && car.originalPrice.trim() !== '') {
-      priceWithoutTax = parseFloat(car.originalPrice.replace(/[^0-9.,]/g, '').replace(',', '.'));
+      priceWithoutTax = parseFloat(
+        car.originalPrice.replace(/[^0-9.,]/g, '').replace(',', '.')
+      );
       if (isNaN(priceWithoutTax)) priceWithoutTax = null;
     }
 
     let images = [];
-    if (car.imageUrl && typeof car.imageUrl === 'string' && car.imageUrl.trim() !== '') {
+    if (
+      car.imageUrl &&
+      typeof car.imageUrl === 'string' &&
+      car.imageUrl.trim() !== ''
+    ) {
       images = [car.imageUrl];
     } else {
       images = ['https://via.placeholder.com/300x200?text=No+Image'];
     }
-    const hasImage =
-      images.length > 0 && !images[0].includes('https://via.placeholder.com');
+    const hasImage = images.length > 0 && !images[0].includes('https://via.placeholder.com');
 
     return {
       title: car.name || 'Unknown',
       link: car.link || '#',
       price: price || 0,
-      priceWithoutTax: priceWithoutTax,
-      power: power,
-      year: year,
-      mileage: mileage,
+      priceWithoutTax,
+      power,
+      year,
+      mileage,
       transmission: 'Unknown',
       fuelType: fuelType || 'Unknown',
-      condition: condition,
+      condition,
       tags: Array.isArray(car.premiumOffers) ? car.premiumOffers : [],
       deliveryInfo: { label: '', price: '' },
-      images: images,
+      images,
       brand: brand || 'Unknown',
       model: model || 'Unknown',
       color: 'Unknown',
       country:
-        car.location && typeof car.location === 'string'
-          ? car.location
-          : 'Unknown',
-      doors: doors,
-      bodyType: bodyType,
-      engineType: engineType,
-      hasImage: hasImage,
+        car.location && typeof car.location === 'string' ? car.location : 'Unknown',
+      doors,
+      bodyType,
+      engineType,
+      hasImage,
     };
   } catch (error) {
     console.error('Error mapping openlane.json entry:', car);
@@ -527,6 +476,7 @@ function mapOpenLaneJson(car) {
   }
 }
 
+// 4.5 mapHertzCarsJson
 function mapHertzCarsJson(car) {
   try {
     const title =
@@ -543,9 +493,7 @@ function mapHertzCarsJson(car) {
       const sanitizedPrice = car['Τιμή'].replace(/[^0-9.,]/g, '').trim();
       const priceMatch = sanitizedPrice.match(/([\d.,]+)/);
       if (priceMatch) {
-        price = parseFloat(
-          priceMatch[1].replace(/\./g, '').replace(',', '.')
-        );
+        price = parseFloat(priceMatch[1].replace(/\./g, '').replace(',', '.'));
         if (isNaN(price)) price = 0;
       }
     }
@@ -562,39 +510,38 @@ function mapHertzCarsJson(car) {
         : 'Δε Διατίθεται';
 
     let images = [];
-    if (car['URL_Εικόνας'] && typeof car['URL_Εικόνας'] === 'string') {
-      images = [car['URL_Εικόνας']];
+    if (car['URLΕικόνας'] && typeof car['URLΕικόνας'] === 'string') {
+      images = [car['URLΕικόνας']];
     } else {
       images = ['https://via.placeholder.com/300x200?text=No+Image'];
     }
-    const hasImage =
-      images.length > 0 && !images[0].includes('https://via.placeholder.com');
+    const hasImage = images.length > 0 && !images[0].includes('https://via.placeholder.com');
 
     const link =
       car['Link'] && typeof car['Link'] === 'string' ? car['Link'] : '#';
 
     return {
-      title: title,
-      link: link,
+      title,
+      link,
       price: price || 0,
       priceWithoutTax: null,
       power: null,
-      year: year,
+      year,
       mileage: null,
       transmission: 'Δε Διατίθεται',
       fuelType: 'Δε Διατίθεται',
       condition: 'Used',
       tags: [],
       deliveryInfo: { label: '', price: '' },
-      images: images,
-      brand: brand,
-      model: model,
+      images,
+      brand,
+      model,
       color: 'Δε Διατίθεται',
-      country: country,
+      country,
       doors: 4,
       bodyType: 'Δε Διατίθεται',
       engineType: 'Δε Διατίθεται',
-      hasImage: hasImage,
+      hasImage,
     };
   } catch (error) {
     console.error('Error mapping hertzcars.json entry:', car);
@@ -603,6 +550,106 @@ function mapHertzCarsJson(car) {
   }
 }
 
+// 4.6 mapCargrJson
+function mapCargrJson(car) {
+  try {
+    const title = car['Τίτλος'] || 'Δε Διατίθεται';
+    const titleParts = title.split(' ');
+    const brand = titleParts[0] || 'Δε Διατίθεται';
+    const model = titleParts.slice(1).join(' ') || 'Δε Διατίθεται';
+
+    let price = 0;
+    if (car['Τιμή'] && typeof car['Τιμή'] === 'string') {
+      const priceMatch = car['Τιμή'].match(/([\d.,]+)/);
+      if (priceMatch) {
+        price =
+          parseFloat(
+            priceMatch[1].replace(/\./g, '').replace(',', '.')
+          ) || 0;
+      }
+    }
+    const priceWithoutTax = null;
+
+    let year = 'Unknown';
+    let mileage = null;
+    let power = null;
+    let fuelType = 'Δε Διατίθεται';
+    if (car['ΕπιπλέονΠληροφορίες'] && typeof car['ΕπιπλέονΠληροφορίες'] === 'string') {
+      const yearMatch = car['ΕπιπλέονΠληροφορίες'].match(/(\d{4})/);
+      if (yearMatch) {
+        year = parseInt(yearMatch[1], 10);
+      }
+      const mileageMatch = car['ΕπιπλέονΠληροφορίες'].match(/([\d.,]+)\s*χλμ/i);
+      if (mileageMatch) {
+        mileage = parseInt(
+          mileageMatch[1].replace(/\./g, '').replace(',', ''),
+          10
+        );
+      }
+      const powerMatch = car['ΕπιπλέονΠληροφορίες'].match(/(\d+)\s*bhp/i);
+      if (powerMatch) {
+        power = parseInt(powerMatch[1], 10);
+      }
+      const lowerInfo = car['ΕπιπλέονΠληροφορίες'].toLowerCase();
+      if (lowerInfo.includes('βενζίνη')) {
+        fuelType = 'Βενζίνη';
+      } else if (lowerInfo.includes('πετρέλαιο')) {
+        fuelType = 'Πετρέλαιο';
+      }
+    }
+    const transmission = 'Δε Διατίθεται';
+    let images = [];
+    if (
+      car['URLΕικόνας'] &&
+      typeof car['URLΕικόνας'] === 'string' &&
+      car['URLΕικόνας'].trim() !== ''
+    ) {
+      images = [car['URLΕικόνας']];
+    } else {
+      images = ['https://via.placeholder.com/300x200?text=No+Image'];
+    }
+    const hasImage = images.length > 0 && !images[0].includes('https://via.placeholder.com');
+
+    const country = car['Τοποθεσία'] || 'Δε Διατίθεται';
+    const color = 'Δε Διατίθεται';
+    const doors = 4;
+    const bodyType = 'Δε Διατίθεται';
+    const engineType = 'Δε Διατίθεται';
+    const tags = [];
+    if (car['Περιγραφή'] && typeof car['Περιγραφή'] === 'string') {
+      tags.push(car['Περιγραφή']);
+    }
+
+    return {
+      title,
+      link: car['Σύνδεσμος'] || '#',
+      price,
+      priceWithoutTax,
+      power,
+      year,
+      mileage,
+      transmission,
+      fuelType,
+      condition: 'Used',
+      tags,
+      deliveryInfo: { label: '', price: '' },
+      images,
+      brand,
+      model,
+      color,
+      country,
+      doors,
+      bodyType,
+      engineType,
+      hasImage,
+    };
+  } catch (error) {
+    console.error('Error mapping cargr.json entry:', car, error);
+    return null;
+  }
+}
+
+// 4.7 mapAutoscoutCarsJson
 function mapAutoscoutCarsJson(car) {
   try {
     const rawTitle =
@@ -610,16 +657,15 @@ function mapAutoscoutCarsJson(car) {
         ? car.title
         : 'Δε Διατίθεται';
     const title = rawTitle.replace(/\n/g, ' ').trim();
-    const link =
-      car.link && typeof car.link === 'string' ? car.link : '#';
+    const link = car.link && typeof car.link === 'string'
+      ? car.link
+      : '#';
 
     let price = 0;
     if (car.price && typeof car.price === 'string') {
       const priceMatch = car.price.match(/€\s?([\d.,]+)/);
       if (priceMatch) {
-        price = parseFloat(
-          priceMatch[1].replace(/\./g, '').replace(',', '.')
-        );
+        price = parseFloat(priceMatch[1].replace(/\./g, '').replace(',', '.'));
         if (isNaN(price)) price = 0;
       }
     }
@@ -654,10 +700,7 @@ function mapAutoscoutCarsJson(car) {
     }
 
     const fuelType =
-      car.fuel && typeof car.fuel === 'string'
-        ? car.fuel
-        : 'Δε Διατίθεται';
-
+      car.fuel && typeof car.fuel === 'string' ? car.fuel : 'Δε Διατίθεται';
     const transmission =
       car.transmission && typeof car.transmission === 'string'
         ? car.transmission
@@ -665,7 +708,8 @@ function mapAutoscoutCarsJson(car) {
 
     const titleParts = title.split(' ');
     const brand = titleParts[0] || 'Δε Διατίθεται';
-    const model = extractMainModel(titleParts.slice(1).join(' ')) || 'Δε Διατίθεται';
+    const model =
+      extractMainModel(titleParts.slice(1).join(' ')) || 'Δε Διατίθεται';
 
     let images = [];
     if (Array.isArray(car.images) && car.images.length > 0) {
@@ -675,8 +719,7 @@ function mapAutoscoutCarsJson(car) {
     } else {
       images = ['https://via.placeholder.com/300x200?text=No+Image'];
     }
-    const hasImage =
-      images.length > 0 && !images[0].includes('https://via.placeholder.com');
+    const hasImage = images.length > 0 && !images[0].includes('https://via.placeholder.com');
 
     let condition = 'Used';
     if (year === 'New') {
@@ -684,19 +727,19 @@ function mapAutoscoutCarsJson(car) {
     }
 
     return {
-      title: title,
-      link: link,
+      title,
+      link,
       price: price || 0,
       priceWithoutTax: null,
-      power: power,
-      year: year,
-      mileage: mileage,
-      transmission: transmission,
-      fuelType: fuelType,
-      condition: condition,
+      power,
+      year,
+      mileage,
+      transmission,
+      fuelType,
+      condition,
       tags: [],
       deliveryInfo: { label: '', price: '' },
-      images: images,
+      images,
       brand: brand || 'Δε Διατίθεται',
       model: model || 'Δε Διατίθεται',
       color: 'Δε Διατίθεται',
@@ -704,7 +747,7 @@ function mapAutoscoutCarsJson(car) {
       doors: 4,
       bodyType: 'Δε Διατίθεται',
       engineType: 'Δε Διατίθεται',
-      hasImage: hasImage,
+      hasImage,
     };
   } catch (error) {
     console.error('Error mapping autoscoutcars.json entry:', car);
@@ -713,12 +756,11 @@ function mapAutoscoutCarsJson(car) {
   }
 }
 
+// 4.8 mapAClassJson
 function mapAClassJson(car) {
   try {
     const title =
-      car.title && typeof car.title === 'string'
-        ? car.title
-        : 'Δε Διατίθεται';
+      car.title && typeof car.title === 'string' ? car.title : 'Δε Διατίθεται';
     const link =
       car.link && typeof car.link === 'string' ? car.link : '#';
 
@@ -729,9 +771,7 @@ function mapAClassJson(car) {
       } else {
         const priceMatch = car.price.match(/€\s?([\d.,]+)/);
         if (priceMatch) {
-          price = parseFloat(
-            priceMatch[1].replace(/\./g, '').replace(',', '.')
-          );
+          price = parseFloat(priceMatch[1].replace(/\./g, '').replace(',', '.'));
           if (isNaN(price)) price = 0;
         }
       }
@@ -766,10 +806,7 @@ function mapAClassJson(car) {
     const tags = Array.isArray(car.tags) ? car.tags : [];
     const deliveryInfo =
       car.deliveryInfo && typeof car.deliveryInfo === 'object'
-        ? {
-            label: car.deliveryInfo.label || '',
-            price: car.deliveryInfo.price || '',
-          }
+        ? { label: car.deliveryInfo.label || '', price: car.deliveryInfo.price || '' }
         : { label: '', price: '' };
 
     let images = [];
@@ -778,12 +815,12 @@ function mapAClassJson(car) {
     } else {
       images = ['https://via.placeholder.com/300x200?text=No+Image'];
     }
-    const hasImage =
-      images.length > 0 && !images[0].includes('https://via.placeholder.com');
+    const hasImage = images.length > 0 && !images[0].includes('https://via.placeholder.com');
 
     const titleParts = title.split(' ');
     const brand = titleParts[0] || 'Δε Διατίθεται';
-    const model = extractMainModel(titleParts.slice(1).join(' ')) || 'Δε Διατίθεται';
+    const model =
+      extractMainModel(titleParts.slice(1).join(' ')) || 'Δε Διατίθεται';
     const color = 'Δε Διατίθεται';
     const country = 'Germany';
     const doors = 4;
@@ -791,27 +828,27 @@ function mapAClassJson(car) {
     const engineType = 'Δε Διατίθεται';
 
     return {
-      title: title,
-      link: link,
+      title,
+      link,
       price: price || 0,
-      priceWithoutTax: priceWithoutTax,
-      power: power,
-      year: year,
-      mileage: mileage,
-      transmission: transmission,
-      fuelType: fuelType,
-      condition: condition,
-      tags: tags,
-      deliveryInfo: deliveryInfo,
-      images: images,
+      priceWithoutTax,
+      power,
+      year,
+      mileage,
+      transmission,
+      fuelType,
+      condition,
+      tags,
+      deliveryInfo,
+      images,
       brand: brand || 'Δε Διατίθεται',
       model: model || 'Δε Διατίθεται',
-      color: color,
-      country: country,
-      doors: doors,
-      bodyType: bodyType,
-      engineType: engineType,
-      hasImage: hasImage,
+      color,
+      country,
+      doors,
+      bodyType,
+      engineType,
+      hasImage,
     };
   } catch (error) {
     console.error('Error mapping aclass.json entry:', car);
@@ -821,7 +858,7 @@ function mapAClassJson(car) {
 }
 
 // ----------------------
-// 5. JSON Streaming Helper Function
+// 5b. JSON Streaming Helper Function
 // ----------------------
 function loadCarsFromFileInChunks(filePath, mapFn) {
   return new Promise((resolve, reject) => {
@@ -832,8 +869,9 @@ function loadCarsFromFileInChunks(filePath, mapFn) {
       }
       const results = [];
       const stream = createReadStream(filePath, { encoding: 'utf8' });
-      const parser = JSONStream.parse('*'); // parse each item from the top-level array
+      const parser = JSONStream.parse('*');
       stream.pipe(parser);
+
       parser.on('data', (carItem) => {
         try {
           const mapped = mapFn(carItem);
@@ -842,6 +880,7 @@ function loadCarsFromFileInChunks(filePath, mapFn) {
           console.error(`Error mapping item in ${filePath}:`, mapError);
         }
       });
+
       parser.on('end', () => resolve(results));
       parser.on('error', (parseErr) => reject(parseErr));
     });
@@ -854,7 +893,7 @@ function loadCarsFromFileInChunks(filePath, mapFn) {
 async function loadAllCars() {
   const dataDir = path.join(__dirname, 'data');
 
-  // Previous JSON files
+  // *Paths to your existing JSON files*
   const carsJsonPath = path.join(dataDir, 'cars.json');
   const carsParkingJsonPath = path.join(dataDir, 'carsparking.json');
   const caaarrssssssJsonPath = path.join(dataDir, 'caaarrssssss.json');
@@ -863,9 +902,15 @@ async function loadAllCars() {
   const cargrJsonPath = path.join(dataDir, 'cargr.json');
   const autoscoutcarsJsonPath = path.join(dataDir, 'autoscoutcars.json');
   const aclassJsonPath = path.join(dataDir, 'aclass.json');
-
-  // New JSON file with updated structure
   const kleinanzeJsonPath = path.join(dataDir, 'kleinanzegencars.json');
+  const mobiledecarsJsonPath = path.join(dataDir, 'mobiledecars.json');
+  const cars2JsonPath = path.join(dataDir, 'cars2.json');
+
+  // **The four splitted carsbg files**:
+  const carsBgPart1Path = path.join(dataDir, 'carsbg_part_1.json');
+  const carsBgPart2Path = path.join(dataDir, 'carsbg_part_2.json');
+  const carsBgPart3Path = path.join(dataDir, 'carsbg_part_3.json');
+  const carsBgPart4Path = path.join(dataDir, 'carsbg_part_4.json');
 
   let carsJson = [];
   let carsParkingJson = [];
@@ -876,72 +921,144 @@ async function loadAllCars() {
   let autoscoutcarsJson = [];
   let aclassJson = [];
   let kleinanzeJson = [];
+  let mobiledecarsJson = [];
+  let cars2Json = [];
 
+  let carsBgPart1 = [];
+  let carsBgPart2 = [];
+  let carsBgPart3 = [];
+  let carsBgPart4 = [];
+
+  // Load each file (try/catch to avoid errors if missing)
   try {
     carsJson = await loadCarsFromFileInChunks(carsJsonPath, mapCarsJson);
     console.log(`cars.json entries mapped: ${carsJson.length}`);
   } catch (err) {
-    console.error('Error reading/streaming cars.json:', err);
+    console.error('Error reading cars.json:', err);
   }
 
   try {
-    carsParkingJson = await loadCarsFromFileInChunks(carsParkingJsonPath, mapCarsParkingJson);
+    carsParkingJson = await loadCarsFromFileInChunks(
+      carsParkingJsonPath,
+      mapCarsParkingJson
+    );
     console.log(`carsparking.json entries mapped: ${carsParkingJson.length}`);
   } catch (err) {
-    console.error('Error reading/streaming carsparking.json:', err);
+    console.error('Error reading carsparking.json:', err);
   }
 
   try {
-    caaarrssssssJson = await loadCarsFromFileInChunks(caaarrssssssJsonPath, mapCaaarrssssssJson);
+    caaarrssssssJson = await loadCarsFromFileInChunks(
+      caaarrssssssJsonPath,
+      mapCaaarrssssssJson
+    );
     console.log(`caaarrssssss.json entries mapped: ${caaarrssssssJson.length}`);
   } catch (err) {
-    console.error('Error reading/streaming caaarrssssss.json:', err);
+    console.error('Error reading caaarrssssss.json:', err);
   }
 
   try {
     openlaneJson = await loadCarsFromFileInChunks(openlaneJsonPath, mapOpenLaneJson);
     console.log(`openlane.json entries mapped: ${openlaneJson.length}`);
   } catch (err) {
-    console.error('Error reading/streaming openlane.json:', err);
+    console.error('Error reading openlane.json:', err);
   }
 
   try {
     hertzcarsJson = await loadCarsFromFileInChunks(hertzcarsJsonPath, mapHertzCarsJson);
     console.log(`hertzcars.json entries mapped: ${hertzcarsJson.length}`);
   } catch (err) {
-    console.error('Error reading/streaming hertzcars.json:', err);
+    console.error('Error reading hertzcars.json:', err);
   }
 
   try {
     cargrJson = await loadCarsFromFileInChunks(cargrJsonPath, mapCargrJson);
     console.log(`cargr.json entries mapped: ${cargrJson.length}`);
   } catch (err) {
-    console.error('Error reading/streaming cargr.json:', err);
+    console.error('Error reading cargr.json:', err);
   }
 
   try {
-    autoscoutcarsJson = await loadCarsFromFileInChunks(autoscoutcarsJsonPath, mapAutoscoutCarsJson);
+    autoscoutcarsJson = await loadCarsFromFileInChunks(
+      autoscoutcarsJsonPath,
+      mapAutoscoutCarsJson
+    );
     console.log(`autoscoutcars.json entries mapped: ${autoscoutcarsJson.length}`);
   } catch (err) {
-    console.error('Error reading/streaming autoscoutcars.json:', err);
+    console.error('Error reading autoscoutcars.json:', err);
   }
 
   try {
     aclassJson = await loadCarsFromFileInChunks(aclassJsonPath, mapAClassJson);
     console.log(`aclass.json entries mapped: ${aclassJson.length}`);
   } catch (err) {
-    console.error('Error reading/streaming aclass.json:', err);
+    console.error('Error reading aclass.json:', err);
   }
 
   try {
     kleinanzeJson = await loadCarsFromFileInChunks(kleinanzeJsonPath, mapCarsJson);
     console.log(`kleinanzegencars.json entries mapped: ${kleinanzeJson.length}`);
   } catch (err) {
-    console.error('Error reading/streaming kleinanzegencars.json:', err);
+    console.error('Error reading kleinanzegencars.json:', err);
   }
 
+  try {
+    mobiledecarsJson = await loadCarsFromFileInChunks(mobiledecarsJsonPath, mapCarsJson);
+    console.log(`mobiledecars.json entries mapped: ${mobiledecarsJson.length}`);
+  } catch (err) {
+    console.error('Error reading mobiledecars.json:', err);
+  }
+
+  try {
+    cars2Json = await loadCarsFromFileInChunks(cars2JsonPath, mapCarsJson);
+    console.log(`cars2.json entries mapped: ${cars2Json.length}`);
+  } catch (err) {
+    console.error('Error reading cars2.json:', err);
+  }
+
+  // **Load splitted carsbg parts**
+  try {
+    carsBgPart1 = await loadCarsFromFileInChunks(carsBgPart1Path, mapCarsJson);
+    console.log(`carsbg_part_1.json entries mapped: ${carsBgPart1.length}`);
+  } catch (err) {
+    console.error('Error reading carsbg_part_1.json:', err);
+  }
+
+  try {
+    carsBgPart2 = await loadCarsFromFileInChunks(carsBgPart2Path, mapCarsJson);
+    console.log(`carsbg_part_2.json entries mapped: ${carsBgPart2.length}`);
+  } catch (err) {
+    console.error('Error reading carsbg_part_2.json:', err);
+  }
+
+  try {
+    carsBgPart3 = await loadCarsFromFileInChunks(carsBgPart3Path, mapCarsJson);
+    console.log(`carsbg_part_3.json entries mapped: ${carsBgPart3.length}`);
+  } catch (err) {
+    console.error('Error reading carsbg_part_3.json:', err);
+  }
+
+  try {
+    carsBgPart4 = await loadCarsFromFileInChunks(carsBgPart4Path, mapCarsJson);
+    console.log(`carsbg_part_4.json entries mapped: ${carsBgPart4.length}`);
+  } catch (err) {
+    console.error('Error reading carsbg_part_4.json:', err);
+  }
+
+  // Merge splitted carsbg arrays
+  const carsbgCombined = [
+    ...carsBgPart1,
+    ...carsBgPart2,
+    ...carsBgPart3,
+    ...carsBgPart4,
+  ];
+
+  // Combine all data into a single array
   const allCars = [
     ...kleinanzeJson,
+    ...mobiledecarsJson,
+    ...cars2Json,
+    ...carsbgCombined, // splitted carsbg data
     ...carsJson,
     ...carsParkingJson,
     ...caaarrssssssJson,
@@ -952,18 +1069,20 @@ async function loadAllCars() {
     ...aclassJson,
   ];
 
+  // Sort so cars with images come first
   allCars.sort((a, b) => {
     if (a.hasImage && !b.hasImage) return -1;
     if (!a.hasImage && b.hasImage) return 1;
     return 0;
   });
 
-  const carsWithImages = allCars.filter((car) => car.hasImage).length;
-  const carsWithoutImages = allCars.length - carsWithImages;
+  const total = allCars.length;
+  const withImages = allCars.filter((c) => c.hasImage).length;
+  const withoutImages = total - withImages;
 
-  console.log(`Total Cars Loaded: ${allCars.length}`);
-  console.log(`Cars with Images: ${carsWithImages}`);
-  console.log(`Cars without Images: ${carsWithoutImages}`);
+  console.log(`Total Cars Loaded: ${total}`);
+  console.log(`Cars with Images: ${withImages}`);
+  console.log(`Cars without Images: ${withoutImages}`);
 
   return allCars;
 }
@@ -974,6 +1093,20 @@ async function loadAllCars() {
 let allCars = [];
 (async () => {
   allCars = await loadAllCars();
+
+  // OPTIONAL: unify brand names
+  allCars.forEach((car) => {
+    if (!car.brand) {
+      car.brand = 'Unknown';
+      return;
+    }
+    const lowerBrand = car.brand.trim().toLowerCase();
+    // Example: unify all "Mercedes" variants -> "Mercedes-Benz"
+    if (lowerBrand.includes('mercedes')) {
+      car.brand = 'Mercedes-Benz';
+    }
+    // ... Add more brand unifications if needed ...
+  });
 })().catch((err) => {
   console.error('Error during loadAllCars():', err);
 });
@@ -1050,7 +1183,10 @@ app.get('/', (req, res) => {
     page,
   } = req.query;
 
+  // use the "allCars" array we loaded async
   let filteredCars = allCars;
+
+  // -- Filtering Logic --
   if (brand) {
     filteredCars = filteredCars.filter(
       (car) => car.brand.toLowerCase() === brand.toLowerCase()
@@ -1074,12 +1210,12 @@ app.get('/', (req, res) => {
   }
   if (color) {
     filteredCars = filteredCars.filter(
-      (car) => car.color.toLowerCase() === color.toLowerCase()
+      (car) => car.color && car.color.toLowerCase() === color.toLowerCase()
     );
   }
   if (country) {
     filteredCars = filteredCars.filter(
-      (car) => car.country.toLowerCase() === country.toLowerCase()
+      (car) => car.country && car.country.toLowerCase() === country.toLowerCase()
     );
   }
   if (numberOfDoors) {
@@ -1189,7 +1325,9 @@ app.get('/', (req, res) => {
     if (Array.isArray(features)) {
       filteredCars = filteredCars.filter((car) =>
         features.every((feature) =>
-          car.tags.map((tag) => tag.toLowerCase()).includes(feature.toLowerCase())
+          car.tags
+            .map((tag) => tag.toLowerCase())
+            .includes(feature.toLowerCase())
         )
       );
     } else {
@@ -1199,6 +1337,7 @@ app.get('/', (req, res) => {
     }
   }
 
+  // -- Pagination --
   const ITEMS_PER_PAGE = 12;
   const currentPage = parseInt(page, 10) || 1;
   const totalItems = filteredCars.length;
@@ -1207,31 +1346,70 @@ app.get('/', (req, res) => {
   const endIndex = startIndex + ITEMS_PER_PAGE;
   const paginatedCars = filteredCars.slice(startIndex, endIndex);
 
-  const brands = [...new Set(allCars.map((car) => car.brand).filter(Boolean))].sort();
-  let models = [...new Set(
-    allCars
-      .filter((car) => car.model && car.model.toLowerCase() !== 'unknown')
-      .map((car) => car.model)
-      .filter(Boolean)
-  )].sort();
-  const fuelTypes = [...new Set(allCars.map((car) => car.fuelType).filter(Boolean))].sort();
-  const transmissions = [...new Set(allCars.map((car) => car.transmission).filter(Boolean))].sort();
-  const colors = [...new Set(allCars.map((car) => car.color).filter(Boolean))].sort();
-  const countries = [...new Set(allCars.map((car) => car.country).filter(Boolean))].sort();
-  const engineTypes = [...new Set(allCars.map((car) => car.engineType).filter(Boolean))].sort();
-  const bodyTypes = [...new Set(allCars.map((car) => car.bodyType).filter(Boolean))].sort();
-  const conditions = [...new Set(allCars.map((car) => car.condition).filter(Boolean))].sort();
-  const availableFeatures = [...new Set(allCars.flatMap((car) => car.tags))].filter((feature) => feature).sort();
+  // Build filter dropdown arrays
+  const brands = [
+    ...new Set(allCars.map((car) => car.brand).filter(Boolean)),
+  ].sort();
 
-  if (brand) {
-    models = [...new Set(
+  let models = [
+    ...new Set(
       allCars
-        .filter((car) => car.brand.toLowerCase() === brand.toLowerCase() && car.model && car.model.toLowerCase() !== 'unknown')
+        .filter((car) => car.model && car.model.toLowerCase() !== 'unknown')
         .map((car) => car.model)
         .filter(Boolean)
-    )].sort();
+    ),
+  ].sort();
+
+  const fuelTypes = [
+    ...new Set(allCars.map((car) => car.fuelType).filter(Boolean)),
+  ].sort();
+
+  const transmissions = [
+    ...new Set(allCars.map((car) => car.transmission).filter(Boolean)),
+  ].sort();
+
+  const colors = [
+    ...new Set(allCars.map((car) => car.color).filter(Boolean)),
+  ].sort();
+
+  const countries = [
+    ...new Set(allCars.map((car) => car.country).filter(Boolean)),
+  ].sort();
+
+  const engineTypes = [
+    ...new Set(allCars.map((car) => car.engineType).filter(Boolean)),
+  ].sort();
+
+  const bodyTypes = [
+    ...new Set(allCars.map((car) => car.bodyType).filter(Boolean)),
+  ].sort();
+
+  const conditions = [
+    ...new Set(allCars.map((car) => car.condition).filter(Boolean)),
+  ].sort();
+
+  const availableFeatures = [
+    ...new Set(allCars.flatMap((car) => car.tags)),
+  ].filter((feature) => feature).sort();
+
+  // If brand is chosen, refine models to that brand only
+  if (brand) {
+    models = [
+      ...new Set(
+        allCars
+          .filter(
+            (car) =>
+              car.brand.toLowerCase() === brand.toLowerCase() &&
+              car.model &&
+              car.model.toLowerCase() !== 'unknown'
+          )
+          .map((car) => car.model)
+          .filter(Boolean)
+      ),
+    ].sort();
   }
 
+  // Render the page
   res.render('cars', {
     title: 'Διαθέσιμα Αυτοκίνητα',
     cars: paginatedCars,
@@ -1245,6 +1423,8 @@ app.get('/', (req, res) => {
     bodyTypes,
     conditions,
     availableFeatures,
+
+    // Selected filters
     selectedBrand: brand || '',
     selectedModel: model || '',
     selectedFuelType: fuelType || '',
@@ -1263,9 +1443,16 @@ app.get('/', (req, res) => {
     selectedEngineType: engineType || '',
     selectedBodyType: bodyType || '',
     selectedCondition: condition || '',
-    selectedFeatures: Array.isArray(features) ? features : (features ? [features] : []),
+    selectedFeatures: Array.isArray(features)
+      ? features
+      : features
+      ? [features]
+      : [],
+
     currentPage,
     totalPages,
+
+    // Provide them for pagination building
     filters: {
       brand,
       model,
@@ -1285,7 +1472,11 @@ app.get('/', (req, res) => {
       engineType,
       bodyType,
       condition,
-      features: Array.isArray(features) ? features : (features ? [features] : []),
+      features: Array.isArray(features)
+        ? features
+        : features
+        ? [features]
+        : [],
     },
     activePage: 'cars',
     success: req.query.success || '',
@@ -1317,7 +1508,6 @@ app.post('/customs-calculations', (req, res) => {
     insurance,
     customsService,
   } = req.body;
-
   if (
     !value ||
     !engineCapacity ||
@@ -1365,7 +1555,7 @@ app.post('/customs-calculations', (req, res) => {
 
   let customsDuty = 0;
   if (origin.toLowerCase() === 'non-eu') {
-    const customsRate = 0.10;
+    const customsRate = 0.1; // 10%
     customsDuty = vehicleValue * customsRate;
   }
 
@@ -1418,7 +1608,9 @@ app.post('/customs-calculations', (req, res) => {
   const vatRate = 0.24;
   const vatBase = vehicleValue + customsDuty + transportCost;
   const vat = vatBase * vatRate;
-  const totalCustoms = vat + customsDuty + fuelTax + transportCost + insuranceCost + customsServiceCost;
+
+  const totalCustoms =
+    vat + customsDuty + fuelTax + transportCost + insuranceCost + customsServiceCost;
 
   const calculationResult = {
     vehicleValue: vehicleValue.toFixed(2),
@@ -1436,7 +1628,7 @@ app.post('/customs-calculations', (req, res) => {
     activePage: 'customs-calculations',
     success: 'Ο υπολογισμός ολοκληρώθηκε με επιτυχία.',
     error: '',
-    calculationResult: calculationResult,
+    calculationResult,
   });
 });
 
@@ -1444,69 +1636,42 @@ app.post('/customs-calculations', (req, res) => {
 // 11. Other Routes
 // ----------------------
 app.get('/contact', (req, res) => {
-  res.render('contact', {
-    title: 'Επικοινωνία',
-    activePage: 'contact',
-  });
+  res.render('contact', { title: 'Επικοινωνία', activePage: 'contact' });
 });
 
 app.get('/about', (req, res) => {
-  res.render('about', {
-    title: 'Σχετικά με Εμάς',
-    activePage: 'about',
-  });
+  res.render('about', { title: 'Σχετικά με Εμάς', activePage: 'about' });
 });
 
 app.get('/transporters', (req, res) => {
-  res.render('transporters', {
-    title: 'Μεταφορείς Αυτοκινήτων',
-    activePage: 'services',
-  });
+  res.render('transporters', { title: 'Μεταφορείς Αυτοκινήτων', activePage: 'services' });
 });
 
 app.get('/vin', (req, res) => {
-  res.render('vin', {
-    title: 'Έλεγχος VIN',
-    activePage: 'vin',
-  });
+  res.render('vin', { title: 'Έλεγχος VIN', activePage: 'vin' });
 });
 
 app.get('/telhkykloforias', (req, res) => {
-  res.render('telhkykloforias', {
-    title: 'Τέλη Κυκλοφορίας',
-    activePage: 'telhkykloforias',
-  });
+  res.render('telhkykloforias', { title: 'Τέλη Κυκλοφορίας', activePage: 'telhkykloforias' });
 });
 
 app.get('/blog', (req, res) => {
-  res.render('blog', {
-    title: 'Blog',
-    activePage: 'blog',
-  });
+  res.render('blog', { title: 'Blog', activePage: 'blog' });
 });
 
 // ----------------------
 // 12. Services Routes
 // ----------------------
 app.get('/services/repairs', (req, res) => {
-  res.render('services/repairs', {
-    title: 'Επισκευές',
-    activePage: 'services',
-  });
+  res.render('services/repairs', { title: 'Επισκευές', activePage: 'services' });
 });
 
 app.get('/services/maintenance', (req, res) => {
-  res.render('services/maintenance', {
-    title: 'Συντήρηση',
-    activePage: 'services',
-  });
+  res.render('services/maintenance', { title: 'Συντήρηση', activePage: 'services' });
 });
 
 app.get('/services/installations', (req, res) => {
-  res.render('services/installations', {
-    title: 'Εγκαταστάσεις',
-    activePage: 'services',
-  });
+  res.render('services/installations', { title: 'Εγκαταστάσεις', activePage: 'services' });
 });
 
 // ----------------------
