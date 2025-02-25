@@ -1,0 +1,53 @@
+<!-- views/partials/navbar.ejs -->
+<nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top shadow">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold" href="/">
+            <i class="bi bi-car-front-fill me-2"></i> Αυτοκίνητα
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Εναλλαγή πλοήγηση">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <% menuItems.forEach(function(item) { %>
+                    <% if (item.dropdown && item.dropdown.length > 0) { %>
+                        <li class="nav-item dropdown <%= activePage === item.page ? 'active' : '' %>">
+                            <a class="nav-link dropdown-toggle" href="<%= item.href %>" id="navbarDropdown<%= item.page %>" 
+                                role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <% if (item.icon) { %>
+                                    <i class="bi <%= item.icon %> me-1"></i>
+                                <% } %>
+                                <%= item.name %>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown<%= item.page %>">
+                                <% item.dropdown.forEach(function(subItem) { %>
+                                    <li><a class="dropdown-item" href="<%= subItem.href %>">
+                                        <% if (subItem.icon) { %>
+                                            <i class="bi <%= subItem.icon %> me-2"></i>
+                                        <% } %>
+                                        <%= subItem.name %>
+                                    </a></li>
+                                <% }) %>
+                            </ul>
+                        </li>
+                    <% } else { %>
+                        <li class="nav-item <%= activePage === item.page ? 'active' : '' %>">
+                            <a class="nav-link" href="<%= item.href %>">
+                                <% if (item.icon) { %>
+                                    <i class="bi <%= item.icon %> me-1"></i>
+                                <% } %>
+                                <%= item.name %>
+                            </a>
+                        </li>
+                    <% } %>
+                <% }) %>
+            </ul>
+            <!-- Search Form -->
+            <form class="d-flex ms-lg-3 mt-3 mt-lg-0" method="GET" action="/search">
+                <input class="form-control me-2" type="search" placeholder="Αναζήτηση" aria-label="Search" name="query">
+                <button class="btn btn-outline-success" type="submit"><i class="bi bi-search"></i> Αναζήτηση</button>
+            </form>
+        </div>
+    </div>
+</nav>

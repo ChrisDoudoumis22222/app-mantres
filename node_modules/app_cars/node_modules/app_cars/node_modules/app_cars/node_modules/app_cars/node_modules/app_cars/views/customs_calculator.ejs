@@ -1,0 +1,555 @@
+<!-- views/customs_calculations.ejs -->
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <title><%= title %></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Include Bootstrap 5 CSS and Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        /* Updated Background and Body Styles */
+        body {
+            background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+            min-height: 100vh;
+            padding-top: 70px; /* Offset for fixed navbar */
+            padding-bottom: 40px;
+            font-family: Arial, sans-serif;
+        }
+        /* Updated Container Styles */
+        .container-custom {
+            max-width: 900px; /* Adjust as needed */
+            background-color: #ffffff;
+            margin: auto;
+            padding: 30px;
+            border-radius: 15px; /* Increased radius for consistency */
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        h2, h3 {
+            text-align: center;
+            color: #007bff; /* Consistent with telhkykloforias.ejs */
+            margin-bottom: 30px;
+        }
+        label {
+            color: #555;
+            font-weight: 600; /* Consistent with telhkykloforias.ejs */
+        }
+        .form-control {
+            margin-bottom: 15px;
+        }
+        button {
+            margin-top: 20px;
+            width: 100%;
+            padding: 12px;
+            background-color: #007bff;
+            border: none;
+            color: white;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0069d9;
+        }
+        .results {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #e9ecef;
+            border-left: 6px solid #007bff;
+            border-radius: 4px;
+        }
+        .results p {
+            margin: 10px 0;
+            color: #333;
+        }
+        .info-section {
+            margin-top: 40px;
+        }
+        .info-section h3 {
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: background-color 0.3s;
+        }
+        .info-section h3:hover {
+            background-color: #0056b3;
+        }
+        .info-content {
+            display: none;
+            padding: 10px;
+            border: 1px solid #007bff;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+            margin-bottom: 15px;
+            animation: fadeIn 0.3s;
+        }
+        a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        /* Footer styling */
+        footer {
+            background-color: #f8f9fa;
+            padding: 20px 0;
+        }
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .info-section h3 {
+                font-size: 1.1rem;
+            }
+        }
+        /* New Styles for Enhanced Card */
+        .card-title {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .card-title i {
+            margin-right: 10px;
+            font-size: 1.5rem;
+            color: #007bff;
+        }
+        /* Smooth transition for info sections */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">Αυτοκίνητα</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Εναλλαγή πλοήγηση">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">
+                            <i class="bi bi-car-front-fill me-1"></i> Αυτοκίνητα
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="/customs-calculations">
+                            <i class="bi bi-calculator-fill me-1"></i> Υπολογισμός Εκτελωνισμού
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="servicesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-cone-striped me-1"></i> Υπηρεσίες
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="servicesDropdown">
+                            <li><a class="dropdown-item" href="/services/repairs"><i class="bi bi-tools me-2"></i> Επισκευές</a></li>
+                            <li><a class="dropdown-item" href="/services/maintenance"><i class="bi bi-wrench-adjustable me-2"></i> Συντήρηση</a></li>
+                            <li><a class="dropdown-item" href="/services/installations"><i class="bi bi-gear me-2"></i> Εγκαταστάσεις</a></li>
+                            <li><a class="dropdown-item" href="/transporters"><i class="bi bi-truck-front-fill me-2"></i> Μεταφορείς</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/telhkykloforias">
+                            <i class="bi bi-file-earmark-dollar-fill me-1"></i> Τέλη Κυκλοφορίας
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/blog">
+                            <i class="bi bi-journal-text me-1"></i> Blog
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/about">
+                            <i class="bi bi-info-circle-fill me-1"></i> Σχετικά με Εμάς
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/contact">
+                            <i class="bi bi-envelope-fill me-1"></i> Επικοινωνία
+                        </a>
+                    </li>
+                </ul>
+                <form class="d-flex my-2 my-lg-0" method="GET" action="/search">
+                    <input class="form-control me-2" type="search" placeholder="Αναζήτηση" aria-label="Search" name="query">
+                    <button class="btn btn-outline-success" type="submit">Αναζήτηση</button>
+                </form>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-custom my-5">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="card-title">
+                    <i class="bi bi-calculator-fill"></i>
+                    Υπολογιστής Εκτελωνισμού Αυτοκινήτου
+                </h2>
+
+                <!-- Display Success or Error Messages -->
+                <div id="message-container">
+                    <!-- Messages will be injected here by JavaScript -->
+                </div>
+
+                <form id="customs-form">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="value" class="form-label">
+                                    <i class="bi bi-euro me-1"></i>
+                                    Αξία Οχήματος (€):
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-euro me-1"></i></span>
+                                    <input type="number" id="value" name="value" min="0" step="0.01" class="form-control" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="engineCapacity" class="form-label">
+                                    <i class="bi bi-speedometer2 me-1"></i>
+                                    Κυβική Χωρητικότητα (cc):
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-speedometer2 me-1"></i></span>
+                                    <input type="number" id="engineCapacity" name="engineCapacity" min="0" class="form-control" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="co2Emissions" class="form-label">
+                                    <i class="bi bi-cloud-fill me-1"></i>
+                                    Εκπομπές CO₂ (g/km):
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-cloud-fill me-1"></i></span>
+                                    <input type="number" id="co2Emissions" name="co2Emissions" min="0" class="form-control" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="year" class="form-label">
+                                    <i class="bi bi-calendar-fill me-1"></i>
+                                    Έτος Κατασκευής:
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-calendar-fill me-1"></i></span>
+                                    <input type="number" id="year" name="year" min="1900" max="<%= new Date().getFullYear() %>" class="form-control" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="distance" class="form-label">
+                                    <i class="bi bi-truck me-1"></i>
+                                    Απόσταση Μεταφοράς (km):
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-truck me-1"></i></span>
+                                    <input type="number" id="distance" name="distance" min="0" step="1" class="form-control" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="origin" class="form-label">
+                                    <i class="bi bi-globe me-1"></i>
+                                    Προέλευση Οχήματος:
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-globe me-1"></i></span>
+                                    <select id="origin" name="origin" class="form-select" required>
+                                        <option value="">Επιλέξτε...</option>
+                                        <option value="eu">ΕΕ</option>
+                                        <option value="non-eu">Εκτός ΕΕ</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="insurance" class="form-label">
+                                    <i class="bi bi-shield-lock-fill me-1"></i>
+                                    Κόστος Ασφάλισης (€):
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-shield-lock-fill me-1"></i></span>
+                                    <input type="number" id="insurance" name="insurance" min="0" step="0.01" class="form-control" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="customsService" class="form-label">
+                                    <i class="bi bi-briefcase-fill me-1"></i>
+                                    Κόστος Τελωνειακών Υπηρεσιών (€):
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-briefcase-fill me-1"></i></span>
+                                    <input type="number" id="customsService" name="customsService" min="0" step="0.01" class="form-control" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-calculator me-2"></i> Υπολόγισε
+                    </button>
+                </form>
+
+                <!-- Results Section -->
+                <div id="results" class="results mt-4" style="display: none;">
+                    <h4 class="text-center mb-4"><i class="bi bi-graph-up me-2"></i>--- Αναλυτικά Έξοδα ---</h4>
+                    <p>Αξία Οχήματος: €<span id="result-vehicleValue"></span></p>
+                    <p>Κόστος Μεταφοράς (<span id="result-distance"></span> km): €<span id="result-transportCost"></span></p>
+                    <p>Τελωνειακός Δασμός (<span id="result-customsDuty-rate"></span>%): €<span id="result-customsDuty"></span></p>
+                    <p>ΦΠΑ (24%): €<span id="result-vat"></span></p>
+                    <p>Τελωνειακός Φόρος Καυσίμου (ΤΦΚ): €<span id="result-fuelTax"></span></p>
+                    <p>Κόστος Ασφάλισης: €<span id="result-insuranceCost"></span></p>
+                    <p>Κόστος Τελωνειακών Υπηρεσιών: €<span id="result-customsServiceCost"></span></p>
+                    <hr>
+                    <p class="fw-bold">Συνολικό Κόστος Εκτελωνισμού: €<span id="result-totalCustoms"></span></p>
+                </div>
+
+                <div class="info-section">
+                    <!-- Each info section header now includes an icon and indicator -->
+                    <h3 onclick="toggleInfo('step1')">
+                        1. Υπολογισμός Δασμών και ΦΠΑ
+                        <i class="bi bi-chevron-down"></i>
+                    </h3>
+                    <div id="step1" class="info-content">
+                        <strong>Δασμοί:</strong><br>
+                        - Αν το αυτοκίνητο προέρχεται από χώρα της Ευρωπαϊκής Ένωσης (ΕΕ), συνήθως δεν επιβάλλονται δασμοί λόγω της ελεύθερης κυκλοφορίας αγαθών εντός της ΕΕ.<br>
+                        - Αν το αυτοκίνητο προέρχεται από χώρα εκτός ΕΕ, οι δασμοί εξαρτώνται από το είδος και την ηλικία του οχήματος.<br><br>
+                        <strong>ΦΠΑ:</strong><br>
+                        - Ο ΦΠΑ για την εισαγωγή αυτοκινήτου στην Ελλάδα είναι συνήθως 24% επί της αξίας του οχήματος (που περιλαμβάνει την τιμή αγοράς, τα έξοδα μεταφοράς και τα δασμικά τέλη).
+                    </div>
+
+                    <h3 onclick="toggleInfo('step2')">
+                        2. Τελωνειακός Φόρος Καυσίμου (ΤΦΚ)
+                        <i class="bi bi-chevron-down"></i>
+                    </h3>
+                    <div id="step2" class="info-content">
+                        Ο ΤΦΚ υπολογίζεται με βάση την κυβιστικότητα του κινητήρα και τις εκπομπές CO₂ του οχήματος. Οι ακριβείς τιμές και συντελεστές μπορεί να αλλάζουν, οπότε είναι σημαντικό να συμβουλευτείτε την επίσημη ιστοσελίδα της Ελληνικής Τελωνειακής Υπηρεσίας ή να επικοινωνήσετε με έναν τελωνειακό πράκτορα.
+                    </div>
+
+                    <h3 onclick="toggleInfo('step3')">
+                        3. Άλλα Έξοδα
+                        <i class="bi bi-chevron-down"></i>
+                    </h3>
+                    <div id="step3" class="info-content">
+                        - <strong>Κόστος Μεταφοράς:</strong> Περιλαμβάνει τα έξοδα αποστολής του οχήματος από την Ευρώπη στην Ελλάδα.<br>
+                        - <strong>Ασφάλιση:</strong> Είναι σημαντικό να ασφαλίσετε το όχημα κατά τη διάρκεια της μεταφοράς.<br>
+                        - <strong>Τελωνειακές Υπηρεσίες:</strong> Ενδέχεται να υπάρχουν χρεώσεις από τελωνειακούς πράκτορες για τη διαχείριση της διαδικασίας εισαγωγής.
+                    </div>
+
+                    <h3 onclick="toggleInfo('step4')">
+                        4. Διαδικασία Εισαγωγής
+                        <i class="bi bi-chevron-down"></i>
+                    </h3>
+                    <div id="step4" class="info-content">
+                        <strong>Προετοιμασία Εγγράφων:</strong><br>
+                        - Τιμολόγιο αγοράς ή απόδειξη πληρωμής.<br>
+                        - Πιστοποιητικό καταγωγής του οχήματος.<br>
+                        - Τεχνικό δελτίο του οχήματος.<br>
+                        - Απόδειξη πληρωμής ΦΠΑ (αν εφαρμόζεται).<br><br>
+                        <strong>Κατάθεση Δήλωσης Εισαγωγής:</strong><br>
+                        - Στην Ελληνική Τελωνειακή Υπηρεσία, υποβάλετε όλα τα απαραίτητα έγγραφα και δηλώσεις.<br><br>
+                        <strong>Πληρωμή Φόρων και Τελών:</strong><br>
+                        - Πληρώστε τους υπολογισμένους ΦΠΑ, ΤΦΚ και οποιουσδήποτε άλλους φόρους ή τέλη.<br><br>
+                        <strong>Παραλαβή Οχήματος:</strong><br>
+                        - Μετά την ολοκλήρωση της διαδικασίας και την πληρωμή όλων των εξόδων, θα μπορείτε να παραλάβετε το όχημά σας στην Ελλάδα.
+                    </div>
+
+                    <h3 onclick="toggleInfo('step5')">
+                        5. Συμβουλές
+                        <i class="bi bi-chevron-down"></i>
+                    </h3>
+                    <div id="step5" class="info-content">
+                        - <strong>Επικοινωνήστε με Ειδικούς:</strong> Ένας τελωνειακός πράκτορας μπορεί να σας βοηθήσει να κατανοήσετε καλύτερα τη διαδικασία και να διασφαλίσετε ότι όλα τα βήματα γίνονται σωστά.<br>
+                        - <strong>Έλεγχος Νομοθεσίας:</strong> Οι νόμοι και οι κανονισμοί μπορεί να αλλάζουν, οπότε βεβαιωθείτε ότι έχετε την πιο ενημερωμένη πληροφορία πριν ξεκινήσετε τη διαδικασία.<br>
+                        - <strong>Υπολογιστές Εκτελωνισμού:</strong> Υπάρχουν διαδικτυακά εργαλεία που μπορούν να σας βοηθήσουν να εκτιμήσετε τους φόρους και τα τέλη που θα πρέπει να πληρώσετε.
+                    </div>
+
+                    <h3 onclick="toggleInfo('step6')">
+                        6. Χρήσιμοι Σύνδεσμοι
+                        <i class="bi bi-chevron-down"></i>
+                    </h3>
+                    <div id="step6" class="info-content">
+                        - <a href="https://www.aade.gr" target="_blank"><i class="bi bi-globe me-2"></i>Ελληνική Τελωνειακή Υπηρεσία</a><br>
+                        - <a href="https://www.minfin.gr" target="_blank"><i class="bi bi-bank2 me-2"></i>Υπουργείο Οικονομικών</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="text-center mt-5">
+        <div class="container">
+            <p class="mb-0">&copy; <%= new Date().getFullYear() %> Η Εταιρεία σας. Όλα τα δικαιώματα διατηρούνται.</p>
+        </div>
+    </footer>
+
+    <!-- Include Bootstrap 5 JS and Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Function to toggle information sections
+        function toggleInfo(id) {
+            const content = document.getElementById(id);
+            const icon = content.previousElementSibling.querySelector('i.bi-chevron-down, i.bi-chevron-up');
+
+            if (content.style.display === "block") {
+                content.style.display = "none";
+                icon.classList.remove('bi-chevron-up');
+                icon.classList.add('bi-chevron-down');
+            } else {
+                content.style.display = "block";
+                icon.classList.remove('bi-chevron-down');
+                icon.classList.add('bi-chevron-up');
+            }
+        }
+
+        // Function to display messages
+        function displayMessage(type, message) {
+            const messageContainer = document.getElementById('message-container');
+            messageContainer.innerHTML = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Κλείσιμο"></button>
+                </div>
+            `;
+        }
+
+        // Function to perform customs calculations
+        function performCalculations(event) {
+            event.preventDefault(); // Prevent form from submitting
+
+            // Retrieve input values
+            const value = parseFloat(document.getElementById('value').value);
+            const engineCapacity = parseInt(document.getElementById('engineCapacity').value);
+            const co2Emissions = parseInt(document.getElementById('co2Emissions').value);
+            const year = parseInt(document.getElementById('year').value);
+            const distance = parseInt(document.getElementById('distance').value);
+            const origin = document.getElementById('origin').value;
+            const insurance = parseFloat(document.getElementById('insurance').value);
+            const customsService = parseFloat(document.getElementById('customsService').value);
+
+            // Input Validation
+            if (isNaN(value) || isNaN(engineCapacity) || isNaN(co2Emissions) ||
+                isNaN(year) || isNaN(distance) || !origin ||
+                isNaN(insurance) || isNaN(customsService)) {
+                displayMessage('danger', 'Παρακαλώ εισάγετε έγκυρες αριθμητικές τιμές σε όλα τα πεδία.');
+                return;
+            }
+
+            // 1. Τελωνειακός Δασμός (Customs Duty)
+            let customsDuty = 0;
+            let customsDutyRate = 0;
+            if (origin === 'non-eu') {
+                const customsRate = 0.10; // 10%
+                customsDuty = value * customsRate;
+                customsDutyRate = 10;
+            }
+
+            // 2. Κόστος Μεταφοράς (Transport Cost)
+            const transportCostPerKm = 1.0; // Example cost per kilometer
+            const transportCost = distance * transportCostPerKm;
+
+            // 3. Τελωνειακός Φόρος Καυσίμου (Fuel Tax)
+            let fuelTax = 0;
+            if (engineCapacity <= 1200) {
+                if (co2Emissions <= 100) {
+                    fuelTax = 500;
+                } else if (co2Emissions <= 140) {
+                    fuelTax = 700;
+                } else if (co2Emissions <= 180) {
+                    fuelTax = 900;
+                } else {
+                    fuelTax = 1200;
+                }
+            } else if (engineCapacity <= 1600) {
+                if (co2Emissions <= 100) {
+                    fuelTax = 800;
+                } else if (co2Emissions <= 140) {
+                    fuelTax = 1000;
+                } else if (co2Emissions <= 180) {
+                    fuelTax = 1300;
+                } else {
+                    fuelTax = 1600;
+                }
+            } else if (engineCapacity <= 2000) {
+                if (co2Emissions <= 100) {
+                    fuelTax = 1200;
+                } else if (co2Emissions <= 140) {
+                    fuelTax = 1500;
+                } else if (co2Emissions <= 180) {
+                    fuelTax = 1800;
+                } else {
+                    fuelTax = 2100;
+                }
+            } else {
+                if (co2Emissions <= 100) {
+                    fuelTax = 1600;
+                } else if (co2Emissions <= 140) {
+                    fuelTax = 1900;
+                } else if (co2Emissions <= 180) {
+                    fuelTax = 2200;
+                } else {
+                    fuelTax = 2500;
+                }
+            }
+
+            // 4. ΦΠΑ (VAT) Calculation
+            const vatRate = 0.24; // 24%
+            const vatBase = value + customsDuty + transportCost;
+            const vat = vatBase * vatRate;
+
+            // 5. Συνολικό Κόστος Εκτελωνισμού (Total Customs Cost)
+            const totalCustoms = vat + customsDuty + fuelTax + transportCost + insurance + customsService;
+
+            // Display Results
+            document.getElementById('result-vehicleValue').innerText = value.toFixed(2);
+            document.getElementById('result-distance').innerText = distance;
+            document.getElementById('result-customsDuty-rate').innerText = customsDutyRate;
+            document.getElementById('result-customsDuty').innerText = customsDuty.toFixed(2);
+            document.getElementById('result-vat').innerText = vat.toFixed(2);
+            document.getElementById('result-fuelTax').innerText = fuelTax.toFixed(2);
+            document.getElementById('result-insuranceCost').innerText = insurance.toFixed(2);
+            document.getElementById('result-customsServiceCost').innerText = customsService.toFixed(2);
+            document.getElementById('result-totalCustoms').innerText = totalCustoms.toFixed(2);
+
+            // Show the results section
+            document.getElementById('results').style.display = 'block';
+
+            // Optionally, display a success message
+            displayMessage('success', 'Ο υπολογισμός ολοκληρώθηκε με επιτυχία.');
+        }
+
+        // Attach event listener to the form
+        document.getElementById('customs-form').addEventListener('submit', performCalculations);
+    </script>
+</body>
+</html>

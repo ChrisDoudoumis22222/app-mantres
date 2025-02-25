@@ -1,0 +1,44 @@
+<!-- views/vin_result.ejs -->
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <title><%= title %></title>
+    <style>
+        /* Basic styling for better presentation */
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h1 { color: #333; }
+        .error { color: red; }
+        ul { list-style-type: none; padding: 0; }
+        li { margin-bottom: 10px; }
+        a { display: inline-block; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Αποτέλεσμα Ελέγχου VIN</h1>
+
+    <% if (error) { %>
+        <p class="error"><%= error %></p>
+    <% } else if (vinData) { %>
+        <h2>VIN: <%= vin %></h2>
+        <ul>
+            <li><strong>Make:</strong> <%= vinData.make %></li>
+            <li><strong>Model:</strong> <%= vinData.model %></li>
+            <li><strong>Year:</strong> <%= vinData.model_year %></li>
+            <li><strong>Body Style:</strong> <%= vinData.body_style %></li>
+            <li><strong>Engine Type:</strong> <%= vinData.engine_type %></li>
+            <li><strong>Fuel Type:</strong> <%= vinData.fuel_type %></li>
+            <li><strong>Country:</strong> <%= vinData.country %></li>
+            <li><strong>Manufacturer:</strong> <%= vinData.manufacturer %></li>
+            <li><strong>Number of Doors:</strong> <%= vinData.number_of_doors %></li>
+            <li><strong>Engine Horsepower:</strong> <%= vinData.engine_horsepower %> HP</li>
+            <li><strong>Emission Standard:</strong> <%= vinData.emission_standard %></li>
+            <!-- Add more fields as necessary -->
+        </ul>
+    <% } else { %>
+        <p>Δεν βρέθηκαν δεδομένα για τον παρεχόμενο VIN.</p>
+    <% } %>
+
+    <a href="/vin">Επιστροφή στην Αρχική</a>
+</body>
+</html>

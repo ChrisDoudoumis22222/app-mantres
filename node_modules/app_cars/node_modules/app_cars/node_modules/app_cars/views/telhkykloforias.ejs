@@ -1,0 +1,578 @@
+<!-- views/telhkykloforias.ejs -->
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+            min-height: 100vh;
+            padding-top: 70px; /* Adjusted for fixed-top navbar */
+            padding-bottom: 40px;
+        }
+        .container-custom {
+            max-width: 700px;
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            margin: auto;
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #007bff;
+        }
+        .form-label {
+            font-weight: 600;
+        }
+        .result-card {
+            display: none;
+            margin-top: 20px;
+        }
+        .info-icon {
+            color: #17a2b8;
+            cursor: pointer;
+            margin-left: 5px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">Αυτοκίνητα</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Εναλλαγή πλοήγηση">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">
+                            <i class="bi bi-car-front-fill me-1"></i> Αυτοκίνητα
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/customs-calculations">
+                            <i class="bi bi-calculator-fill me-1"></i> Υπολογισμός Εκτελωνισμού
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="servicesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-cone-striped me-1"></i> Υπηρεσίες
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="servicesDropdown">
+                            <li><a class="dropdown-item" href="/services/repairs"><i class="bi bi-tools me-2"></i> Επισκευές</a></li>
+                            <li><a class="dropdown-item" href="/services/maintenance"><i class="bi bi-wrench-adjustable me-2"></i> Συντήρηση</a></li>
+                            <li><a class="dropdown-item" href="/services/installations"><i class="bi bi-gear me-2"></i> Εγκαταστάσεις</a></li>
+                            <li><a class="dropdown-item" href="/transporters"><i class="bi bi-truck-front-fill me-2"></i> Μεταφορείς</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="/telhkykloforias">
+                            <i class="bi bi-file-earmark-dollar-fill me-1"></i> Τέλη Κυκλοφορίας
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/blog">
+                            <i class="bi bi-journal-text me-1"></i> Blog
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/about">
+                            <i class="bi bi-info-circle-fill me-1"></i> Σχετικά με Εμάς
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/contact">
+                            <i class="bi bi-envelope-fill me-1"></i> Επικοινωνία
+                        </a>
+                    </li>
+                </ul>
+                <form class="d-flex my-2 my-lg-0" method="GET" action="/search">
+                    <input class="form-control me-2" type="search" placeholder="Αναζήτηση" aria-label="Search" name="query">
+                    <button class="btn btn-outline-success" type="submit">Αναζήτηση</button>
+                </form>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-custom my-5">
+        <h2><i class="bi bi-cash-stack"></i> Υπολογιστής Τελών Κυκλοφορίας 2025</h2>
+        <form id="feeForm" novalidate>
+            <div class="mb-3">
+                <label for="classificationDate" class="form-label">
+                    Ημερομηνία Πρώτης Ταξινόμησης
+                    <i class="bi bi-info-circle-fill info-icon" data-bs-toggle="tooltip" data-bs-placement="right" title="Η ημερομηνία κατά την οποία ταξινομήθηκε το όχημα για πρώτη φορά."></i>
+                </label>
+                <input type="date" class="form-control" id="classificationDate" name="classificationDate" required>
+                <div class="invalid-feedback">
+                    Παρακαλώ επιλέξτε μια έγκυρη ημερομηνία ταξινόμησης.
+                </div>
+            </div>
+
+            <div id="engineDisplacementDiv" class="mb-3" style="display:none;">
+                <label for="engineDisplacement" class="form-label">
+                    Κυβισμός Κινητήρα (σε κ.εκ.)
+                    <i class="bi bi-info-circle-fill info-icon" data-bs-toggle="tooltip" data-bs-placement="right" title="Ο κυβισμός του κινητήρα του οχήματος σε κυβικά εκατοστά (κ.εκ.)."></i>
+                </label>
+                <input type="number" class="form-control" id="engineDisplacement" name="engineDisplacement" min="0" step="1">
+                <div class="invalid-feedback">
+                    Παρακαλώ εισάγετε έναν έγκυρο κυβισμό κινητήρα.
+                </div>
+            </div>
+
+            <div id="co2EmissionDiv" class="mb-3" style="display:none;">
+                <label for="co2Emission" class="form-label">
+                    Εκπομπές CO₂ (γρ./χλμ.)
+                    <i class="bi bi-info-circle-fill info-icon" data-bs-toggle="tooltip" data-bs-placement="right" title="Οι εκπομπές διοξειδίου του άνθρακα του οχήματος ανά χιλιόμετρο."></i>
+                </label>
+                <input type="number" class="form-control" id="co2Emission" name="co2Emission" min="0" step="1">
+                <div class="invalid-feedback">
+                    Παρακαλώ εισάγετε έγκυρες εκπομπές CO₂.
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="paymentDate" class="form-label">
+                    Ημερομηνία Πληρωμής
+                    <i class="bi bi-info-circle-fill info-icon" data-bs-toggle="tooltip" data-bs-placement="right" title="Η ημερομηνία κατά την οποία πραγματοποιείται η πληρωμή των τελών."></i>
+                </label>
+                <input type="date" class="form-control" id="paymentDate" name="paymentDate" required>
+                <div class="invalid-feedback">
+                    Παρακαλώ επιλέξτε μια έγκυρη ημερομηνία πληρωμής.
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between">
+                <button type="submit" class="btn btn-primary">Υπολογισμός Τελών</button>
+                <button type="reset" class="btn btn-secondary">Επαναφορά</button>
+            </div>
+        </form>
+
+        <div id="result" class="card result-card">
+            <div class="card-header bg-success text-white">
+                <i class="bi bi-calculator-fill"></i> Αποτέλεσμα Υπολογισμού
+            </div>
+            <div class="card-body">
+                <h5 class="card-title">Σύνοψη</h5>
+                <p class="card-text">
+                    <strong>Βασικό Τέλος:</strong> €<span id="baseFee">0.00</span><br>
+                    <strong>Πρόστιμο:</strong> €<span id="penaltyFee">0.00</span> (<span id="penaltyPercentage">0</span>%)<br>
+                    <strong>Σύνολο:</strong> €<span id="totalFee">0.00</span>
+                </p>
+                <hr>
+                <h5>Λεπτομέρειες Υπολογισμού</h5>
+                <ul class="list-group list-group-flush" id="calculationDetails">
+                    <!-- Detailed calculation steps will appear here -->
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="mt-5">
+        <div class="container text-center">
+            <p>&copy; <%= new Date().getFullYear() %> Η Εταιρεία Μας. Όλα τα δικαιώματα διατηρούνται.</p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS and dependencies (Popper) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Initialize Bootstrap tooltips
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+          return new bootstrap.Tooltip(tooltipTriggerEl)
+        })
+
+        const classificationDateInput = document.getElementById('classificationDate');
+        const engineDisplacementDiv = document.getElementById('engineDisplacementDiv');
+        const co2EmissionDiv = document.getElementById('co2EmissionDiv');
+        const feeForm = document.getElementById('feeForm');
+        const resultCard = document.getElementById('result');
+        const baseFeeSpan = document.getElementById('baseFee');
+        const penaltyFeeSpan = document.getElementById('penaltyFee');
+        const penaltyPercentageSpan = document.getElementById('penaltyPercentage');
+        const totalFeeSpan = document.getElementById('totalFee');
+        const calculationDetails = document.getElementById('calculationDetails');
+
+        // Event Listener for Classification Date Change
+        classificationDateInput.addEventListener('change', function() {
+            const classificationDate = new Date(this.value);
+            console.log(`Classification Date Selected: ${this.value}`);
+
+            if (isNaN(classificationDate)) {
+                console.warn('Invalid Classification Date');
+                engineDisplacementDiv.style.display = 'none';
+                co2EmissionDiv.style.display = 'none';
+                return;
+            }
+
+            const category = determineCategory(classificationDate);
+            console.log(`Category Determined: ${category}`);
+
+            if (category === 1 || category === 2) {
+                co2EmissionDiv.style.display = 'block';
+                engineDisplacementDiv.style.display = 'none';
+                console.log('Displaying CO₂ Emission Field');
+            } else if (category === 3 || category === 4 || category === 5) {
+                engineDisplacementDiv.style.display = 'block';
+                co2EmissionDiv.style.display = 'none';
+                console.log('Displaying Engine Displacement Field');
+            } else {
+                engineDisplacementDiv.style.display = 'none';
+                co2EmissionDiv.style.display = 'none';
+                console.warn('Unknown Category: Hiding Both Fields');
+            }
+        });
+
+        // Event Listener for Form Submission
+        feeForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            // Reset previous results
+            calculationDetails.innerHTML = '';
+            resultCard.style.display = 'none';
+            feeForm.classList.remove('was-validated');
+
+            // Validate form
+            if (!feeForm.checkValidity()) {
+                feeForm.classList.add('was-validated');
+                return;
+            }
+
+            const classificationDateValue = document.getElementById('classificationDate').value;
+            const paymentDateValue = document.getElementById('paymentDate').value;
+
+            if (!classificationDateValue || !paymentDateValue) {
+                alert('Παρακαλώ συμπληρώστε όλα τα απαιτούμενα πεδία.');
+                return;
+            }
+
+            const classificationDate = new Date(classificationDateValue);
+            const paymentDate = new Date(paymentDateValue);
+            const category = determineCategory(classificationDate);
+            let fee = 0;
+            let detailSteps = [];
+
+            console.log(`Category Determined for Calculation: ${category}`);
+
+            if (category === 1 || category === 2) {
+                const co2 = parseFloat(document.getElementById('co2Emission').value);
+                if (isNaN(co2)) {
+                    alert('Παρακαλώ εισάγετε έγκυρες εκπομπές CO₂.');
+                    return;
+                }
+                const { fee: calculatedFee, steps } = calculateCO2Fee(co2, category);
+                fee = calculatedFee;
+                detailSteps = steps;
+                console.log(`CO₂ Emissions: ${co2} g/km, Calculated Fee: €${fee.toFixed(2)}`);
+            } else if (category === 3 || category === 4 || category === 5) {
+                const displacement = parseFloat(document.getElementById('engineDisplacement').value);
+                if (isNaN(displacement)) {
+                    alert('Παρακαλώ εισάγετε έγκυρο κυβισμό κινητήρα.');
+                    return;
+                }
+                const { fee: calculatedFee, steps } = calculateDisplacementFee(displacement, category);
+                fee = calculatedFee;
+                detailSteps = steps;
+                console.log(`Engine Displacement: ${displacement} ccm, Calculated Fee: €${fee.toFixed(2)}`);
+            } else {
+                alert('Η ημερομηνία ταξινόμησης δεν ανήκει σε γνωστή κατηγορία.');
+                return;
+            }
+
+            // Calculate penalty
+            const deadline = new Date('2024-12-31');
+            let penaltyPercentage = 0;
+            let penaltyReason = 'Χωρίς πρόστιμο.';
+            if (paymentDate > deadline) {
+                const paymentMonth = paymentDate.getMonth() + 1; // Months are 0-based
+                const paymentYear = paymentDate.getFullYear();
+                if (paymentYear === 2025) {
+                    if (paymentMonth === 1) {
+                        penaltyPercentage = 0.25;
+                        penaltyReason = 'Πληρωμή εντός Ιανουαρίου 2025: πρόστιμο 25%.';
+                    } else if (paymentMonth === 2) {
+                        penaltyPercentage = 0.50;
+                        penaltyReason = 'Πληρωμή εντός Φεβρουαρίου 2025: πρόστιμο 50%.';
+                    } else if (paymentMonth >= 3) {
+                        penaltyPercentage = 1.00;
+                        penaltyReason = 'Πληρωμή από 1η Μαρτίου 2025 και μετά: πρόστιμο 100%.';
+                    }
+                } else if (paymentYear > 2025) {
+                    penaltyPercentage = 1.00;
+                    penaltyReason = 'Πληρωμή μετά το 2025: πρόστιμο 100%.';
+                }
+            }
+
+            const penalty = fee * penaltyPercentage;
+            const totalFee = fee + penalty;
+
+            console.log(`Penalty Percentage: ${penaltyPercentage * 100}%`);
+            console.log(`Penalty Fee: €${penalty.toFixed(2)}`);
+            console.log(`Total Fee: €${totalFee.toFixed(2)}`);
+
+            // Populate calculation details
+            detailSteps.forEach(step => {
+                const li = document.createElement('li');
+                li.classList.add('list-group-item');
+                li.innerHTML = step;
+                calculationDetails.appendChild(li);
+            });
+
+            if (penaltyPercentage > 0) {
+                const penaltyLi = document.createElement('li');
+                penaltyLi.classList.add('list-group-item');
+                penaltyLi.innerHTML = `<strong>Υπολογισμός Προστίμου:</strong> ${penaltyReason}`;
+                calculationDetails.appendChild(penaltyLi);
+            } else {
+                const penaltyLi = document.createElement('li');
+                penaltyLi.classList.add('list-group-item');
+                penaltyLi.innerHTML = `<strong>Πρόστιμο:</strong> Χωρίς πρόστιμο.`;
+                calculationDetails.appendChild(penaltyLi);
+            }
+
+            // Update result fields
+            baseFeeSpan.textContent = fee.toFixed(2);
+            penaltyFeeSpan.textContent = penalty.toFixed(2);
+            penaltyPercentageSpan.textContent = (penaltyPercentage * 100).toFixed(0);
+            totalFeeSpan.textContent = totalFee.toFixed(2);
+
+            // Show result card
+            resultCard.style.display = 'block';
+            // Scroll to result
+            resultCard.scrollIntoView({ behavior: 'smooth' });
+        });
+
+        // Event Listener for Reset Button
+        document.querySelector('button[type="reset"]').addEventListener('click', function() {
+            engineDisplacementDiv.style.display = 'none';
+            co2EmissionDiv.style.display = 'none';
+            calculationDetails.innerHTML = '';
+            resultCard.style.display = 'none';
+            feeForm.classList.remove('was-validated');
+            console.log('Form Reset: Hiding All Dynamic Fields and Clearing Results');
+        });
+
+        // Function to Determine Category Based on Classification Date
+        function determineCategory(date) {
+            const cat1Start = new Date('2021-01-01');
+            const cat2Start = new Date('2010-11-01');
+            const cat3Start = new Date('2006-01-01');
+            const cat4Start = new Date('2001-01-01');
+            // Category 5: before 2001-01-01
+
+            let category = null;
+
+            if (date >= cat1Start) {
+                category = 1;
+            } else if (date >= cat2Start && date < cat1Start) {
+                category = 2;
+            } else if (date >= cat3Start && date < cat2Start) {
+                category = 3;
+            } else if (date >= cat4Start && date < cat3Start) {
+                category = 4;
+            } else if (date < cat4Start) {
+                category = 5;
+            }
+
+            console.log(`Determined Category: ${category} for Date: ${date.toISOString().split('T')[0]}`);
+            return category;
+        }
+
+        // Function to Calculate Fee Based on CO₂ Emissions
+        function calculateCO2Fee(co2, category) {
+            let fee = 0;
+            let steps = [`Κατηγορία ${category}: Εκπομπές CO₂ = ${co2} γρ./χλμ.`];
+
+            if (category === 1) {
+                // Category 1
+                if (co2 >= 0 && co2 <= 122) {
+                    fee = 0;
+                    steps.push('0-122 γρ./χλμ.: Τέλος = €0.00');
+                } else if (co2 >= 123 && co2 <= 139) {
+                    fee = co2 * 0.64;
+                    steps.push(`123-139 γρ./χλμ.: Τέλος = ${co2} * €0.64 = €${fee.toFixed(2)}`);
+                } else if (co2 >= 140 && co2 <= 166) {
+                    fee = co2 * 0.70;
+                    steps.push(`140-166 γρ./χλμ.: Τέλος = ${co2} * €0.70 = €${fee.toFixed(2)}`);
+                } else if (co2 >= 167 && co2 <= 208) {
+                    fee = co2 * 0.85;
+                    steps.push(`167-208 γρ./χλμ.: Τέλος = ${co2} * €0.85 = €${fee.toFixed(2)}`);
+                } else if (co2 >= 209 && co2 <= 224) {
+                    fee = co2 * 1.87;
+                    steps.push(`209-224 γρ./χλμ.: Τέλος = ${co2} * €1.87 = €${fee.toFixed(2)}`);
+                } else if (co2 >= 225 && co2 <= 240) {
+                    fee = co2 * 2.20;
+                    steps.push(`225-240 γρ./χλμ.: Τέλος = ${co2} * €2.20 = €${fee.toFixed(2)}`);
+                } else if (co2 >= 241 && co2 <= 260) {
+                    fee = co2 * 2.50;
+                    steps.push(`241-260 γρ./χλμ.: Τέλος = ${co2} * €2.50 = €${fee.toFixed(2)}`);
+                } else if (co2 >= 261 && co2 <= 280) {
+                    fee = co2 * 2.70;
+                    steps.push(`261-280 γρ./χλμ.: Τέλος = ${co2} * €2.70 = €${fee.toFixed(2)}`);
+                } else if (co2 >= 281) {
+                    fee = co2 * 2.85;
+                    steps.push(`281 γρ./χλμ. και άνω: Τέλος = ${co2} * €2.85 = €${fee.toFixed(2)}`);
+                }
+            } else if (category === 2) {
+                // Category 2
+                if (co2 >= 0 && co2 <= 90) {
+                    fee = 0;
+                    steps.push('0-90 γρ./χλμ.: Τέλος = €0.00');
+                } else if (co2 >= 91 && co2 <= 100) {
+                    fee = co2 * 0.90;
+                    steps.push(`91-100 γρ./χλμ.: Τέλος = ${co2} * €0.90 = €${fee.toFixed(2)}`);
+                } else if (co2 >= 101 && co2 <= 120) {
+                    fee = co2 * 0.98;
+                    steps.push(`101-120 γρ./χλμ.: Τέλος = ${co2} * €0.98 = €${fee.toFixed(2)}`);
+                } else if (co2 >= 121 && co2 <= 140) {
+                    fee = co2 * 1.20;
+                    steps.push(`121-140 γρ./χλμ.: Τέλος = ${co2} * €1.20 = €${fee.toFixed(2)}`);
+                } else if (co2 >= 141 && co2 <= 160) {
+                    fee = co2 * 1.85;
+                    steps.push(`141-160 γρ./χλμ.: Τέλος = ${co2} * €1.85 = €${fee.toFixed(2)}`);
+                } else if (co2 >= 161 && co2 <= 180) {
+                    fee = co2 * 2.45;
+                    steps.push(`161-180 γρ./χλμ.: Τέλος = ${co2} * €2.45 = €${fee.toFixed(2)}`);
+                } else if (co2 >= 181 && co2 <= 200) {
+                    fee = co2 * 2.78;
+                    steps.push(`181-200 γρ./χλμ.: Τέλος = ${co2} * €2.78 = €${fee.toFixed(2)}`);
+                } else if (co2 >= 201 && co2 <= 250) {
+                    fee = co2 * 3.05;
+                    steps.push(`201-250 γρ./χλμ.: Τέλος = ${co2} * €3.05 = €${fee.toFixed(2)}`);
+                } else if (co2 >= 251) {
+                    fee = co2 * 3.72;
+                    steps.push(`251 γρ./χλμ. και άνω: Τέλος = ${co2} * €3.72 = €${fee.toFixed(2)}`);
+                }
+            }
+            return { fee, steps };
+        }
+
+        // Function to Calculate Fee Based on Engine Displacement
+        function calculateDisplacementFee(displacement, category) {
+            let fee = 0;
+            let steps = [`Κατηγορία ${category}: Κυβισμός Κινητήρα = ${displacement} κ.εκ.`];
+
+            if (category === 3) {
+                // Category 3
+                if (displacement >= 0 && displacement <= 300) {
+                    fee = 22;
+                    steps.push('0-300 κ.εκ.: Τέλος = €22.00');
+                } else if (displacement >= 301 && displacement <= 785) {
+                    fee = 55;
+                    steps.push('301-785 κ.εκ.: Τέλος = €55.00');
+                } else if (displacement >= 786 && displacement <= 1071) {
+                    fee = 120;
+                    steps.push('786-1.071 κ.εκ.: Τέλος = €120.00');
+                } else if (displacement >= 1072 && displacement <= 1357) {
+                    fee = 135;
+                    steps.push('1.072-1.357 κ.εκ.: Τέλος = €135.00');
+                } else if (displacement >= 1358 && displacement <= 1548) {
+                    fee = 255;
+                    steps.push('1.358-1.548 κ.εκ.: Τέλος = €255.00');
+                } else if (displacement >= 1549 && displacement <= 1738) {
+                    fee = 280;
+                    steps.push('1.549-1.738 κ.εκ.: Τέλος = €280.00');
+                } else if (displacement >= 1739 && displacement <= 1928) {
+                    fee = 320;
+                    steps.push('1.739-1.928 κ.εκ.: Τέλος = €320.00');
+                } else if (displacement >= 1929 && displacement <= 2357) {
+                    fee = 690;
+                    steps.push('1.929-2.357 κ.εκ.: Τέλος = €690.00');
+                } else if (displacement >= 2358 && displacement <= 3000) {
+                    fee = 920;
+                    steps.push('2.358-3.000 κ.εκ.: Τέλος = €920.00');
+                } else if (displacement >= 3001 && displacement <= 4000) {
+                    fee = 1150;
+                    steps.push('3.001-4.000 κ.εκ.: Τέλος = €1.150.00');
+                } else if (displacement >= 4001) {
+                    fee = 1380;
+                    steps.push('Άνω των 4.001 κ.εκ.: Τέλος = €1.380.00');
+                }
+            } else if (category === 4) {
+                // Category 4
+                if (displacement >= 0 && displacement <= 300) {
+                    fee = 22;
+                    steps.push('0-300 κ.εκ.: Τέλος = €22.00');
+                } else if (displacement >= 301 && displacement <= 785) {
+                    fee = 55;
+                    steps.push('301-785 κ.εκ.: Τέλος = €55.00');
+                } else if (displacement >= 786 && displacement <= 1071) {
+                    fee = 120;
+                    steps.push('786-1.071 κ.εκ.: Τέλος = €120.00');
+                } else if (displacement >= 1072 && displacement <= 1357) {
+                    fee = 135;
+                    steps.push('1.072-1.357 κ.εκ.: Τέλος = €135.00');
+                } else if (displacement >= 1358 && displacement <= 1548) {
+                    fee = 240;
+                    steps.push('1.358-1.548 κ.εκ.: Τέλος = €240.00');
+                } else if (displacement >= 1549 && displacement <= 1738) {
+                    fee = 265;
+                    steps.push('1.549-1.738 κ.εκ.: Τέλος = €265.00');
+                } else if (displacement >= 1739 && displacement <= 1928) {
+                    fee = 300;
+                    steps.push('1.739-1.928 κ.εκ.: Τέλος = €300.00');
+                } else if (displacement >= 1929 && displacement <= 2357) {
+                    fee = 630;
+                    steps.push('1.929-2.357 κ.εκ.: Τέλος = €630.00');
+                } else if (displacement >= 2358 && displacement <= 3000) {
+                    fee = 840;
+                    steps.push('2.358-3.000 κ.εκ.: Τέλος = €840.00');
+                } else if (displacement >= 3001 && displacement <= 4000) {
+                    fee = 1050;
+                    steps.push('3.001-4.000 κ.εκ.: Τέλος = €1.050.00');
+                } else if (displacement >= 4001) {
+                    fee = 1260;
+                    steps.push('Άνω των 4.001 κ.εκ.: Τέλος = €1.260.00');
+                }
+            } else if (category === 5) {
+                // Category 5
+                if (displacement >= 0 && displacement <= 300) {
+                    fee = 22;
+                    steps.push('0-300 κ.εκ.: Τέλος = €22.00');
+                } else if (displacement >= 301 && displacement <= 785) {
+                    fee = 55;
+                    steps.push('301-785 κ.εκ.: Τέλος = €55.00');
+                } else if (displacement >= 786 && displacement <= 1071) {
+                    fee = 120;
+                    steps.push('786-1.071 κ.εκ.: Τέλος = €120.00');
+                } else if (displacement >= 1072 && displacement <= 1357) {
+                    fee = 135;
+                    steps.push('1.072-1.357 κ.εκ.: Τέλος = €135.00');
+                } else if (displacement >= 1358 && displacement <= 1548) {
+                    fee = 225;
+                    steps.push('1.358-1.548 κ.εκ.: Τέλος = €225.00');
+                } else if (displacement >= 1549 && displacement <= 1738) {
+                    fee = 250;
+                    steps.push('1.549-1.738 κ.εκ.: Τέλος = €250.00');
+                } else if (displacement >= 1739 && displacement <= 1928) {
+                    fee = 280;
+                    steps.push('1.739-1.928 κ.εκ.: Τέλος = €280.00');
+                } else if (displacement >= 1929 && displacement <= 2357) {
+                    fee = 615;
+                    steps.push('1.929-2.357 κ.εκ.: Τέλος = €615.00');
+                } else if (displacement >= 2358 && displacement <= 3000) {
+                    fee = 820;
+                    steps.push('2.358-3.000 κ.εκ.: Τέλος = €820.00');
+                } else if (displacement >= 3001 && displacement <= 4000) {
+                    fee = 1025;
+                    steps.push('3.001-4.000 κ.εκ.: Τέλος = €1.025.00');
+                } else if (displacement >= 4001) {
+                    fee = 1230;
+                    steps.push('Άνω των 4.001 κ.εκ.: Τέλος = €1.230.00');
+                }
+            }
+            return { fee, steps };
+        }
+    </script>
+</body>
+</html>
