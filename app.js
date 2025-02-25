@@ -27,10 +27,11 @@ app.use(bodyParser.urlencoded({ extended: false }));
 // ----------------------
 const buildQueryString = (filters) => {
   return Object.keys(filters)
-    .filter((key) =>
-      filters[key] !== undefined &&
-      filters[key] !== '' &&
-      filters[key].length !== 0
+    .filter(
+      (key) =>
+        filters[key] !== undefined &&
+        filters[key] !== '' &&
+        filters[key].length !== 0
     )
     .map((key) => {
       if (Array.isArray(filters[key])) {
@@ -55,7 +56,7 @@ const extractMainModel = (fullModel) => {
 // 4. Mapping Functions for JSON Data
 // ----------------------
 
-// 4.1 mapCarsJson (cars.json, kleinanzegencars.json, mobiledecars.json, cars2.json, etc.)
+// 4.1 mapCarsJson (used for most JSON files)
 function mapCarsJson(car) {
   try {
     const title = car.title || 'No Title';
@@ -128,9 +129,8 @@ function mapCarsJson(car) {
       brand,
       model,
       location,
-      priceWithoutTax: typeof car.priceWithoutTax !== 'undefined'
-        ? car.priceWithoutTax
-        : null,
+      priceWithoutTax:
+        typeof car.priceWithoutTax !== 'undefined' ? car.priceWithoutTax : null,
     };
   } catch (error) {
     console.error('Error mapping car:', car, error);
@@ -172,7 +172,10 @@ function mapCarsParkingJson(car) {
     ) {
       const mileageMatch = car.mileage.match(/([\d.,]+)\s*km/i);
       if (mileageMatch) {
-        mileage = parseInt(mileageMatch[1].replace(/\./g, '').replace(',', ''), 10);
+        mileage = parseInt(
+          mileageMatch[1].replace(/\./g, '').replace(',', ''),
+          10
+        );
       }
     }
     let doors = 4;
@@ -206,9 +209,7 @@ function mapCarsParkingJson(car) {
     const hasImage = images.length > 0 && !images[0].includes('https://via.placeholder.com');
 
     return {
-      title: `${car.brand || 'Unknown'} ${car.model || 'Unknown'} ${
-        car.engine || ''
-      }`.trim() || 'Unknown',
+      title: `${car.brand || 'Unknown'} ${car.model || 'Unknown'} ${car.engine || ''}`.trim() || 'Unknown',
       link: car.url || '#',
       price: price || 0,
       priceWithoutTax: null,
@@ -226,9 +227,7 @@ function mapCarsParkingJson(car) {
       condition,
       tags:
         car.description && typeof car.description === 'string'
-          ? car.description
-              .split(' ')
-              .filter((word) => !['Year', 'Kilometer', 'Fuel', 'type'].includes(word))
+          ? car.description.split(' ').filter((word) => !['Year', 'Kilometer', 'Fuel', 'type'].includes(word))
           : [],
       deliveryInfo:
         car.deliveryInfo && typeof car.deliveryInfo === 'object'
@@ -237,10 +236,8 @@ function mapCarsParkingJson(car) {
       images,
       brand: car.brand || 'Unknown',
       model: model || 'Unknown',
-      color:
-        car.color && typeof car.color === 'string' ? car.color : 'Unknown',
-      country:
-        car.country && typeof car.country === 'string' ? car.country : 'Unknown',
+      color: car.color && typeof car.color === 'string' ? car.color : 'Unknown',
+      country: car.country && typeof car.country === 'string' ? car.country : 'Unknown',
       doors,
       bodyType,
       engineType,
@@ -289,13 +286,9 @@ function mapCaaarrssssssJson(car) {
     if (
       car.tags &&
       Array.isArray(car.tags) &&
-      car.tags.some(
-        (tag) => typeof tag === 'string' && tag.toLowerCase().includes('door')
-      )
+      car.tags.some((tag) => typeof tag === 'string' && tag.toLowerCase().includes('door'))
     ) {
-      const doorsTag = car.tags.find(
-        (tag) => typeof tag === 'string' && tag.toLowerCase().includes('door')
-      );
+      const doorsTag = car.tags.find((tag) => typeof tag === 'string' && tag.toLowerCase().includes('door'));
       const doorsMatch = doorsTag.match(/(\d+)/);
       if (doorsMatch) {
         doors = parseInt(doorsMatch[1], 10);
@@ -325,9 +318,7 @@ function mapCaaarrssssssJson(car) {
     const hasImage = images.length > 0 && !images[0].includes('https://via.placeholder.com');
 
     return {
-      title: `${car.brand || 'Unknown'} ${car.model || 'Unknown'} ${
-        car.engine || ''
-      }`.trim() || 'Unknown',
+      title: `${car.brand || 'Unknown'} ${car.model || 'Unknown'} ${car.engine || ''}`.trim() || 'Unknown',
       link: car.url || '#',
       price: price || 0,
       priceWithoutTax: null,
@@ -351,10 +342,8 @@ function mapCaaarrssssssJson(car) {
       images,
       brand: car.brand || 'Unknown',
       model: model || 'Unknown',
-      color:
-        car.color && typeof car.color === 'string' ? car.color : 'Unknown',
-      country:
-        car.country && typeof car.country === 'string' ? car.country : 'Unknown',
+      color: car.color && typeof car.color === 'string' ? car.color : 'Unknown',
+      country: car.country && typeof car.country === 'string' ? car.country : 'Unknown',
       doors,
       bodyType,
       engineType,
@@ -370,9 +359,7 @@ function mapCaaarrssssssJson(car) {
 // 4.4 mapOpenLaneJson
 function mapOpenLaneJson(car) {
   try {
-    const nameParts = car.name && typeof car.name === 'string'
-      ? car.name.split(' ')
-      : [];
+    const nameParts = car.name && typeof car.name === 'string' ? car.name.split(' ') : [];
     const brand = nameParts[0] || 'Unknown';
     const fullModel = nameParts.slice(1, nameParts.length - 1).join(' ') || 'Unknown';
     const model = extractMainModel(fullModel);
@@ -411,8 +398,7 @@ function mapOpenLaneJson(car) {
 
     let mileage = null;
     let doors = 4;
-    let bodyType =
-      car.carType && typeof car.carType === 'string' ? car.carType : 'Unknown';
+    let bodyType = car.carType && typeof car.carType === 'string' ? car.carType : 'Unknown';
     let engineType = 'Unknown';
     if (fuelType.toLowerCase() === 'diesel') {
       engineType = 'Diesel';
@@ -427,18 +413,12 @@ function mapOpenLaneJson(car) {
 
     let priceWithoutTax = null;
     if (car.originalPrice && typeof car.originalPrice === 'string' && car.originalPrice.trim() !== '') {
-      priceWithoutTax = parseFloat(
-        car.originalPrice.replace(/[^0-9.,]/g, '').replace(',', '.')
-      );
+      priceWithoutTax = parseFloat(car.originalPrice.replace(/[^0-9.,]/g, '').replace(',', '.'));
       if (isNaN(priceWithoutTax)) priceWithoutTax = null;
     }
 
     let images = [];
-    if (
-      car.imageUrl &&
-      typeof car.imageUrl === 'string' &&
-      car.imageUrl.trim() !== ''
-    ) {
+    if (car.imageUrl && typeof car.imageUrl === 'string' && car.imageUrl.trim() !== '') {
       images = [car.imageUrl];
     } else {
       images = ['https://via.placeholder.com/300x200?text=No+Image'];
@@ -462,8 +442,7 @@ function mapOpenLaneJson(car) {
       brand: brand || 'Unknown',
       model: model || 'Unknown',
       color: 'Unknown',
-      country:
-        car.location && typeof car.location === 'string' ? car.location : 'Unknown',
+      country: car.location && typeof car.location === 'string' ? car.location : 'Unknown',
       doors,
       bodyType,
       engineType,
@@ -562,10 +541,7 @@ function mapCargrJson(car) {
     if (car['Τιμή'] && typeof car['Τιμή'] === 'string') {
       const priceMatch = car['Τιμή'].match(/([\d.,]+)/);
       if (priceMatch) {
-        price =
-          parseFloat(
-            priceMatch[1].replace(/\./g, '').replace(',', '.')
-          ) || 0;
+        price = parseFloat(priceMatch[1].replace(/\./g, '').replace(',', '.')) || 0;
       }
     }
     const priceWithoutTax = null;
@@ -581,10 +557,7 @@ function mapCargrJson(car) {
       }
       const mileageMatch = car['ΕπιπλέονΠληροφορίες'].match(/([\d.,]+)\s*χλμ/i);
       if (mileageMatch) {
-        mileage = parseInt(
-          mileageMatch[1].replace(/\./g, '').replace(',', ''),
-          10
-        );
+        mileage = parseInt(mileageMatch[1].replace(/\./g, '').replace(',', ''), 10);
       }
       const powerMatch = car['ΕπιπλέονΠληροφορίες'].match(/(\d+)\s*bhp/i);
       if (powerMatch) {
@@ -653,13 +626,9 @@ function mapCargrJson(car) {
 function mapAutoscoutCarsJson(car) {
   try {
     const rawTitle =
-      car.title && typeof car.title === 'string'
-        ? car.title
-        : 'Δε Διατίθεται';
+      car.title && typeof car.title === 'string' ? car.title : 'Δε Διατίθεται';
     const title = rawTitle.replace(/\n/g, ' ').trim();
-    const link = car.link && typeof car.link === 'string'
-      ? car.link
-      : '#';
+    const link = car.link && typeof car.link === 'string' ? car.link : '#';
 
     let price = 0;
     if (car.price && typeof car.price === 'string') {
@@ -674,10 +643,7 @@ function mapAutoscoutCarsJson(car) {
     if (car.mileage && typeof car.mileage === 'string') {
       const mileageMatch = car.mileage.match(/([\d.,]+)\s*km/i);
       if (mileageMatch) {
-        mileage = parseInt(
-          mileageMatch[1].replace(/\./g, '').replace(',', ''),
-          10
-        );
+        mileage = parseInt(mileageMatch[1].replace(/\./g, '').replace(',', ''), 10);
       }
     }
 
@@ -702,14 +668,11 @@ function mapAutoscoutCarsJson(car) {
     const fuelType =
       car.fuel && typeof car.fuel === 'string' ? car.fuel : 'Δε Διατίθεται';
     const transmission =
-      car.transmission && typeof car.transmission === 'string'
-        ? car.transmission
-        : 'Δε Διατίθεται';
+      car.transmission && typeof car.transmission === 'string' ? car.transmission : 'Δε Διατίθεται';
 
     const titleParts = title.split(' ');
     const brand = titleParts[0] || 'Δε Διατίθεται';
-    const model =
-      extractMainModel(titleParts.slice(1).join(' ')) || 'Δε Διατίθεται';
+    const model = extractMainModel(titleParts.slice(1).join(' ')) || 'Δε Διατίθεται';
 
     let images = [];
     if (Array.isArray(car.images) && car.images.length > 0) {
@@ -759,10 +722,8 @@ function mapAutoscoutCarsJson(car) {
 // 4.8 mapAClassJson
 function mapAClassJson(car) {
   try {
-    const title =
-      car.title && typeof car.title === 'string' ? car.title : 'Δε Διατίθεται';
-    const link =
-      car.link && typeof car.link === 'string' ? car.link : '#';
+    const title = car.title && typeof car.title === 'string' ? car.title : 'Δε Διατίθεται';
+    const link = car.link && typeof car.link === 'string' ? car.link : '#';
 
     let price = 0;
     if (car.price && typeof car.price === 'string') {
@@ -793,10 +754,7 @@ function mapAClassJson(car) {
     if (car.mileage && typeof car.mileage === 'string') {
       const mileageMatch = car.mileage.match(/([\d.,]+)\s*km/i);
       if (mileageMatch) {
-        mileage = parseInt(
-          mileageMatch[1].replace(/\./g, '').replace(',', ''),
-          10
-        );
+        mileage = parseInt(mileageMatch[1].replace(/\./g, '').replace(',', ''), 10);
       }
     }
 
@@ -819,8 +777,7 @@ function mapAClassJson(car) {
 
     const titleParts = title.split(' ');
     const brand = titleParts[0] || 'Δε Διατίθεται';
-    const model =
-      extractMainModel(titleParts.slice(1).join(' ')) || 'Δε Διατίθεται';
+    const model = extractMainModel(titleParts.slice(1).join(' ')) || 'Δε Διατίθεται';
     const color = 'Δε Διατίθεται';
     const country = 'Germany';
     const doors = 4;
@@ -888,186 +845,55 @@ function loadCarsFromFileInChunks(filePath, mapFn) {
 }
 
 // ----------------------
-// 6. Load and Normalize All Car Data (Streaming Version)
+// 6. Load and Normalize All Car Data (Sequential Chunk Loads)
 // ----------------------
 async function loadAllCars() {
   const dataDir = path.join(__dirname, 'data');
 
-  // *Paths to your existing JSON files*
-  const carsJsonPath = path.join(dataDir, 'cars.json');
-  const carsParkingJsonPath = path.join(dataDir, 'carsparking.json');
-  const caaarrssssssJsonPath = path.join(dataDir, 'caaarrssssss.json');
-  const openlaneJsonPath = path.join(dataDir, 'openlane.json');
-  const hertzcarsJsonPath = path.join(dataDir, 'hertzcars.json');
-  const cargrJsonPath = path.join(dataDir, 'cargr.json');
-  const autoscoutcarsJsonPath = path.join(dataDir, 'autoscoutcars.json');
-  const aclassJsonPath = path.join(dataDir, 'aclass.json');
-  const kleinanzeJsonPath = path.join(dataDir, 'kleinanzegencars.json');
-  const mobiledecarsJsonPath = path.join(dataDir, 'mobiledecars.json');
-  const cars2JsonPath = path.join(dataDir, 'cars2.json');
-
-  // **The four splitted carsbg files**:
-  const carsBgPart1Path = path.join(dataDir, 'carsbg_part_1.json');
-  const carsBgPart2Path = path.join(dataDir, 'carsbg_part_2.json');
-  const carsBgPart3Path = path.join(dataDir, 'carsbg_part_3.json');
-  const carsBgPart4Path = path.join(dataDir, 'carsbg_part_4.json');
-
-  let carsJson = [];
-  let carsParkingJson = [];
-  let caaarrssssssJson = [];
-  let openlaneJson = [];
-  let hertzcarsJson = [];
-  let cargrJson = [];
-  let autoscoutcarsJson = [];
-  let aclassJson = [];
-  let kleinanzeJson = [];
-  let mobiledecarsJson = [];
-  let cars2Json = [];
-
-  let carsBgPart1 = [];
-  let carsBgPart2 = [];
-  let carsBgPart3 = [];
-  let carsBgPart4 = [];
-
-  // Load each file (try/catch to avoid errors if missing)
-  try {
-    carsJson = await loadCarsFromFileInChunks(carsJsonPath, mapCarsJson);
-    console.log(`cars.json entries mapped: ${carsJson.length}`);
-  } catch (err) {
-    console.error('Error reading cars.json:', err);
-  }
-
-  try {
-    carsParkingJson = await loadCarsFromFileInChunks(
-      carsParkingJsonPath,
-      mapCarsParkingJson
-    );
-    console.log(`carsparking.json entries mapped: ${carsParkingJson.length}`);
-  } catch (err) {
-    console.error('Error reading carsparking.json:', err);
-  }
-
-  try {
-    caaarrssssssJson = await loadCarsFromFileInChunks(
-      caaarrssssssJsonPath,
-      mapCaaarrssssssJson
-    );
-    console.log(`caaarrssssss.json entries mapped: ${caaarrssssssJson.length}`);
-  } catch (err) {
-    console.error('Error reading caaarrssssss.json:', err);
-  }
-
-  try {
-    openlaneJson = await loadCarsFromFileInChunks(openlaneJsonPath, mapOpenLaneJson);
-    console.log(`openlane.json entries mapped: ${openlaneJson.length}`);
-  } catch (err) {
-    console.error('Error reading openlane.json:', err);
-  }
-
-  try {
-    hertzcarsJson = await loadCarsFromFileInChunks(hertzcarsJsonPath, mapHertzCarsJson);
-    console.log(`hertzcars.json entries mapped: ${hertzcarsJson.length}`);
-  } catch (err) {
-    console.error('Error reading hertzcars.json:', err);
-  }
-
-  try {
-    cargrJson = await loadCarsFromFileInChunks(cargrJsonPath, mapCargrJson);
-    console.log(`cargr.json entries mapped: ${cargrJson.length}`);
-  } catch (err) {
-    console.error('Error reading cargr.json:', err);
-  }
-
-  try {
-    autoscoutcarsJson = await loadCarsFromFileInChunks(
-      autoscoutcarsJsonPath,
-      mapAutoscoutCarsJson
-    );
-    console.log(`autoscoutcars.json entries mapped: ${autoscoutcarsJson.length}`);
-  } catch (err) {
-    console.error('Error reading autoscoutcars.json:', err);
-  }
-
-  try {
-    aclassJson = await loadCarsFromFileInChunks(aclassJsonPath, mapAClassJson);
-    console.log(`aclass.json entries mapped: ${aclassJson.length}`);
-  } catch (err) {
-    console.error('Error reading aclass.json:', err);
-  }
-
-  try {
-    kleinanzeJson = await loadCarsFromFileInChunks(kleinanzeJsonPath, mapCarsJson);
-    console.log(`kleinanzegencars.json entries mapped: ${kleinanzeJson.length}`);
-  } catch (err) {
-    console.error('Error reading kleinanzegencars.json:', err);
-  }
-
-  try {
-    mobiledecarsJson = await loadCarsFromFileInChunks(mobiledecarsJsonPath, mapCarsJson);
-    console.log(`mobiledecars.json entries mapped: ${mobiledecarsJson.length}`);
-  } catch (err) {
-    console.error('Error reading mobiledecars.json:', err);
-  }
-
-  try {
-    cars2Json = await loadCarsFromFileInChunks(cars2JsonPath, mapCarsJson);
-    console.log(`cars2.json entries mapped: ${cars2Json.length}`);
-  } catch (err) {
-    console.error('Error reading cars2.json:', err);
-  }
-
-  // **Load splitted carsbg parts**
-  try {
-    carsBgPart1 = await loadCarsFromFileInChunks(carsBgPart1Path, mapCarsJson);
-    console.log(`carsbg_part_1.json entries mapped: ${carsBgPart1.length}`);
-  } catch (err) {
-    console.error('Error reading carsbg_part_1.json:', err);
-  }
-
-  try {
-    carsBgPart2 = await loadCarsFromFileInChunks(carsBgPart2Path, mapCarsJson);
-    console.log(`carsbg_part_2.json entries mapped: ${carsBgPart2.length}`);
-  } catch (err) {
-    console.error('Error reading carsbg_part_2.json:', err);
-  }
-
-  try {
-    carsBgPart3 = await loadCarsFromFileInChunks(carsBgPart3Path, mapCarsJson);
-    console.log(`carsbg_part_3.json entries mapped: ${carsBgPart3.length}`);
-  } catch (err) {
-    console.error('Error reading carsbg_part_3.json:', err);
-  }
-
-  try {
-    carsBgPart4 = await loadCarsFromFileInChunks(carsBgPart4Path, mapCarsJson);
-    console.log(`carsbg_part_4.json entries mapped: ${carsBgPart4.length}`);
-  } catch (err) {
-    console.error('Error reading carsbg_part_4.json:', err);
-  }
-
-  // Merge splitted carsbg arrays
-  const carsbgCombined = [
-    ...carsBgPart1,
-    ...carsBgPart2,
-    ...carsBgPart3,
-    ...carsBgPart4,
+  // Define an array of file paths to load
+  const filePaths = [
+    path.join(dataDir, 'cars.json'),
+    path.join(dataDir, 'carsparking.json'),
+    path.join(dataDir, 'caaarrssssss.json'),
+    path.join(dataDir, 'openlane.json'),
+    path.join(dataDir, 'hertzcars.json'),
+    path.join(dataDir, 'cargr.json'),
+    path.join(dataDir, 'autoscoutcars.json'),
+    path.join(dataDir, 'aclass.json'),
+    path.join(dataDir, 'kleinanzegencars.json'),
+    path.join(dataDir, 'mobiledecars.json'),
+    path.join(dataDir, 'cars2.json'),
+    // Four split files for carsbg
+    path.join(dataDir, 'carsbg_part_1.json'),
+    path.join(dataDir, 'carsbg_part_2.json'),
+    path.join(dataDir, 'carsbg_part_3.json'),
+    path.join(dataDir, 'carsbg_part_4.json'),
   ];
 
-  // Combine all data into a single array
-  const allCars = [
-    ...kleinanzeJson,
-    ...mobiledecarsJson,
-    ...cars2Json,
-    ...carsbgCombined, // splitted carsbg data
-    ...carsJson,
-    ...carsParkingJson,
-    ...caaarrssssssJson,
-    ...openlaneJson,
-    ...hertzcarsJson,
-    ...cargrJson,
-    ...autoscoutcarsJson,
-    ...aclassJson,
-  ];
+  let allCars = [];
+
+  // Process each file sequentially to limit memory pressure
+  for (const filePath of filePaths) {
+    let mapper = mapCarsJson; // default mapper
+    if (filePath.includes('carsparking')) mapper = mapCarsParkingJson;
+    else if (filePath.includes('caaarrssssss')) mapper = mapCaaarrssssssJson;
+    else if (filePath.includes('openlane')) mapper = mapOpenLaneJson;
+    else if (filePath.includes('hertzcars')) mapper = mapHertzCarsJson;
+    else if (filePath.includes('cargr')) mapper = mapCargrJson;
+    else if (filePath.includes('autoscoutcars')) mapper = mapAutoscoutCarsJson;
+    else if (filePath.includes('aclass')) mapper = mapAClassJson;
+    // For all others (including split carsbg files), use mapCarsJson
+
+    try {
+      const cars = await loadCarsFromFileInChunks(filePath, mapper);
+      console.log(`${path.basename(filePath)} entries mapped: ${cars.length}`);
+      allCars = allCars.concat(cars);
+      // Allow a small delay for GC
+      await new Promise(resolve => setTimeout(resolve, 10));
+    } catch (err) {
+      console.error(`Error reading ${filePath}:`, err);
+    }
+  }
 
   // Sort so cars with images come first
   allCars.sort((a, b) => {
@@ -1076,13 +902,9 @@ async function loadAllCars() {
     return 0;
   });
 
-  const total = allCars.length;
-  const withImages = allCars.filter((c) => c.hasImage).length;
-  const withoutImages = total - withImages;
-
-  console.log(`Total Cars Loaded: ${total}`);
-  console.log(`Cars with Images: ${withImages}`);
-  console.log(`Cars without Images: ${withoutImages}`);
+  console.log(`Total Cars Loaded: ${allCars.length}`);
+  console.log(`Cars with Images: ${allCars.filter(car => car.hasImage).length}`);
+  console.log(`Cars without Images: ${allCars.filter(car => !car.hasImage).length}`);
 
   return allCars;
 }
@@ -1094,18 +916,17 @@ let allCars = [];
 (async () => {
   allCars = await loadAllCars();
 
-  // OPTIONAL: unify brand names
+  // OPTIONAL: Unify brand names (e.g. merge all "Mercedes" variants to "Mercedes-Benz")
   allCars.forEach((car) => {
     if (!car.brand) {
       car.brand = 'Unknown';
       return;
     }
     const lowerBrand = car.brand.trim().toLowerCase();
-    // Example: unify all "Mercedes" variants -> "Mercedes-Benz"
     if (lowerBrand.includes('mercedes')) {
       car.brand = 'Mercedes-Benz';
     }
-    // ... Add more brand unifications if needed ...
+    // Add additional unification rules if needed
   });
 })().catch((err) => {
   console.error('Error during loadAllCars():', err);
@@ -1183,7 +1004,6 @@ app.get('/', (req, res) => {
     page,
   } = req.query;
 
-  // use the "allCars" array we loaded async
   let filteredCars = allCars;
 
   // -- Filtering Logic --
@@ -1325,9 +1145,7 @@ app.get('/', (req, res) => {
     if (Array.isArray(features)) {
       filteredCars = filteredCars.filter((car) =>
         features.every((feature) =>
-          car.tags
-            .map((tag) => tag.toLowerCase())
-            .includes(feature.toLowerCase())
+          car.tags.map((tag) => tag.toLowerCase()).includes(feature.toLowerCase())
         )
       );
     } else {
@@ -1347,66 +1165,34 @@ app.get('/', (req, res) => {
   const paginatedCars = filteredCars.slice(startIndex, endIndex);
 
   // Build filter dropdown arrays
-  const brands = [
-    ...new Set(allCars.map((car) => car.brand).filter(Boolean)),
-  ].sort();
+  const brands = [...new Set(allCars.map((car) => car.brand).filter(Boolean))].sort();
+  let models = [...new Set(
+    allCars
+      .filter((car) => car.model && car.model.toLowerCase() !== 'unknown')
+      .map((car) => car.model)
+      .filter(Boolean)
+  )].sort();
+  const fuelTypes = [...new Set(allCars.map((car) => car.fuelType).filter(Boolean))].sort();
+  const transmissions = [...new Set(allCars.map((car) => car.transmission).filter(Boolean))].sort();
+  const colors = [...new Set(allCars.map((car) => car.color).filter(Boolean))].sort();
+  const countries = [...new Set(allCars.map((car) => car.country).filter(Boolean))].sort();
+  const engineTypes = [...new Set(allCars.map((car) => car.engineType).filter(Boolean))].sort();
+  const bodyTypes = [...new Set(allCars.map((car) => car.bodyType).filter(Boolean))].sort();
+  const conditions = [...new Set(allCars.map((car) => car.condition).filter(Boolean))].sort();
+  const availableFeatures = [...new Set(allCars.flatMap((car) => car.tags))].filter((feature) => feature).sort();
 
-  let models = [
-    ...new Set(
+  // If brand is chosen, refine the model list
+  if (brand) {
+    models = [...new Set(
       allCars
-        .filter((car) => car.model && car.model.toLowerCase() !== 'unknown')
+        .filter((car) =>
+          car.brand.toLowerCase() === brand.toLowerCase() &&
+          car.model &&
+          car.model.toLowerCase() !== 'unknown'
+        )
         .map((car) => car.model)
         .filter(Boolean)
-    ),
-  ].sort();
-
-  const fuelTypes = [
-    ...new Set(allCars.map((car) => car.fuelType).filter(Boolean)),
-  ].sort();
-
-  const transmissions = [
-    ...new Set(allCars.map((car) => car.transmission).filter(Boolean)),
-  ].sort();
-
-  const colors = [
-    ...new Set(allCars.map((car) => car.color).filter(Boolean)),
-  ].sort();
-
-  const countries = [
-    ...new Set(allCars.map((car) => car.country).filter(Boolean)),
-  ].sort();
-
-  const engineTypes = [
-    ...new Set(allCars.map((car) => car.engineType).filter(Boolean)),
-  ].sort();
-
-  const bodyTypes = [
-    ...new Set(allCars.map((car) => car.bodyType).filter(Boolean)),
-  ].sort();
-
-  const conditions = [
-    ...new Set(allCars.map((car) => car.condition).filter(Boolean)),
-  ].sort();
-
-  const availableFeatures = [
-    ...new Set(allCars.flatMap((car) => car.tags)),
-  ].filter((feature) => feature).sort();
-
-  // If brand is chosen, refine models to that brand only
-  if (brand) {
-    models = [
-      ...new Set(
-        allCars
-          .filter(
-            (car) =>
-              car.brand.toLowerCase() === brand.toLowerCase() &&
-              car.model &&
-              car.model.toLowerCase() !== 'unknown'
-          )
-          .map((car) => car.model)
-          .filter(Boolean)
-      ),
-    ].sort();
+    )].sort();
   }
 
   // Render the page
@@ -1423,8 +1209,6 @@ app.get('/', (req, res) => {
     bodyTypes,
     conditions,
     availableFeatures,
-
-    // Selected filters
     selectedBrand: brand || '',
     selectedModel: model || '',
     selectedFuelType: fuelType || '',
@@ -1443,16 +1227,9 @@ app.get('/', (req, res) => {
     selectedEngineType: engineType || '',
     selectedBodyType: bodyType || '',
     selectedCondition: condition || '',
-    selectedFeatures: Array.isArray(features)
-      ? features
-      : features
-      ? [features]
-      : [],
-
+    selectedFeatures: Array.isArray(features) ? features : features ? [features] : [],
     currentPage,
     totalPages,
-
-    // Provide them for pagination building
     filters: {
       brand,
       model,
@@ -1472,11 +1249,7 @@ app.get('/', (req, res) => {
       engineType,
       bodyType,
       condition,
-      features: Array.isArray(features)
-        ? features
-        : features
-        ? [features]
-        : [],
+      features: Array.isArray(features) ? features : features ? [features] : [],
     },
     activePage: 'cars',
     success: req.query.success || '',
@@ -1609,8 +1382,7 @@ app.post('/customs-calculations', (req, res) => {
   const vatBase = vehicleValue + customsDuty + transportCost;
   const vat = vatBase * vatRate;
 
-  const totalCustoms =
-    vat + customsDuty + fuelTax + transportCost + insuranceCost + customsServiceCost;
+  const totalCustoms = vat + customsDuty + fuelTax + transportCost + insuranceCost + customsServiceCost;
 
   const calculationResult = {
     vehicleValue: vehicleValue.toFixed(2),
@@ -1678,10 +1450,7 @@ app.get('/services/installations', (req, res) => {
 // 13. 404 Error Handler
 // ----------------------
 app.use((req, res) => {
-  res.status(404).render('404', {
-    title: 'Σελίδα Δεν Βρέθηκε',
-    activePage: '',
-  });
+  res.status(404).render('404', { title: 'Σελίδα Δεν Βρέθηκε', activePage: '' });
 });
 
 // ----------------------
