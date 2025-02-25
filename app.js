@@ -829,7 +829,7 @@ function mapAClassJson(car) {
       const mileageMatch = car.mileage.match(/([\d.,]+)\s*km/i);
       if (mileageMatch) {
         mileage = parseInt(
-          mileageMatch[1].replace(/\./g, '').replace(',', ''),
+          mileageMatch[1].replace(/\./g, '').replace(',', ''), 
           10
         );
       }
@@ -997,16 +997,6 @@ async function loadAllCars() {
   console.log(`Cars with Images: ${allCars.filter((car) => car.hasImage).length}`);
   console.log(`Cars without Images: ${allCars.filter((car) => !car.hasImage).length}`);
 
-  return allCars;
-}
-
-// ----------------------
-// 7. Initialize and Store All Cars (Async)
-// ----------------------
-let allCars = [];
-(async () => {
-  allCars = await loadAllCars();
-
   // OPTIONAL: Unify brand names (e.g. merge all "Mercedes" variants to "Mercedes-Benz")
   allCars.forEach((car) => {
     if (!car.brand) {
@@ -1019,9 +1009,22 @@ let allCars = [];
     }
     // Add additional unification rules if needed
   });
-})().catch((err) => {
-  console.error('Error during loadAllCars():', err);
-});
+
+  return allCars;
+}
+
+// ------------------------------------
+// 7. LAZY-LOADED DATA CACHE
+//    (Instead of loading at startup)
+// ------------------------------------
+let dataCache = null;
+async function getAllCars() {
+  // Only load data the first time or if you want to always reload
+  if (!dataCache) {
+    dataCache = await loadAllCars();
+  }
+  return dataCache;
+}
 
 // ----------------------
 // 8. Menu Items Definition
@@ -1071,7 +1074,11 @@ app.use((req, res, next) => {
 // ----------------------
 // 9. Routes Definition
 // ----------------------
-app.get('/', (req, res) => {
+// Make the handler async so we can await getAllCars()
+app.get('/', async (req, res) => {
+  // Load the data only if needed
+  const allCars = await getAllCars();
+
   const {
     brand,
     model,
@@ -1097,7 +1104,7 @@ app.get('/', (req, res) => {
 
   let filteredCars = allCars;
 
-  // Filter logic
+  // Filter logic (same as before)
   if (brand) {
     filteredCars = filteredCars.filter(
       (car) => car.brand.toLowerCase() === brand.toLowerCase()
@@ -1256,6 +1263,7 @@ app.get('/', (req, res) => {
   const paginatedCars = filteredCars.slice(startIndex, endIndex);
 
   // Build filter dropdown arrays
+  // (Notice we use allCars here, not filteredCars, to get the full set for dropdowns)
   const brands = [...new Set(allCars.map((car) => car.brand).filter(Boolean))].sort();
   let models = [
     ...new Set(
