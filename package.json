@@ -28,6 +28,8 @@
     "morgan": "^1.10.0",
     "node-cache": "^5.1.2",
     "puppeteer": "^23.8.0",
+    "stream-chain": "^3.4.0",
+    "stream-json": "^1.9.1",
     "winston": "^3.17.0"
   }
 }
