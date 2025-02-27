@@ -59,7 +59,7 @@ const extractMainModel = (fullModel) => {
 // 4. Mapping Functions for JSON Data
 // ----------------------
 
-// 4.1 mapCarsJson (used for most JSON files)
+// 4.1 mapCarsJson (default mapper)
 function mapCarsJson(car) {
   try {
     const title = car.title || 'No Title';
@@ -707,7 +707,7 @@ function mapAutoscoutCarsJson(car) {
       const mileageMatch = car.mileage.match(/([\d.,]+)\s*km/i);
       if (mileageMatch) {
         mileage = parseInt(
-          mileageMatch[1].replace(/\./g, '').replace(',', ''),
+          mileageMatch[1].replace(/\./g, '').replace(',', ''), 
           10
         );
       }
@@ -894,7 +894,7 @@ function mapAClassJson(car) {
 }
 
 // ----------------------
-// 5b. JSON Streaming Helper Function (using stream-chain)
+// 5. JSON Streaming Helper Function (using stream-chain)
 // ----------------------
 function loadCarsFromFileInChunks(filePath, mapFn) {
   return new Promise((resolve, reject) => {
@@ -937,12 +937,28 @@ function loadCarsFromFileInChunks(filePath, mapFn) {
 }
 
 // ----------------------
-// 6. Load and Normalize All Car Data (Sequential Chunk Loads)
+// 6. Pick the Right Mapper Based on File Name
+// ----------------------
+function getMapperFor(filePath) {
+  if (filePath.includes('carsparking')) return mapCarsParkingJson;
+  if (filePath.includes('caaarrssssss')) return mapCaaarrssssssJson;
+  if (filePath.includes('openlane')) return mapOpenLaneJson;
+  if (filePath.includes('hertzcars')) return mapHertzCarsJson;
+  if (filePath.includes('cargr')) return mapCargrJson;
+  if (filePath.includes('autoscoutcars')) return mapAutoscoutCarsJson;
+  if (filePath.includes('aclass')) return mapAClassJson;
+  // Default mapper:
+  return mapCarsJson;
+}
+
+// ----------------------
+// 7. Load and Normalize Car Data (Sequential file loading)
 // ----------------------
 async function loadAllCars() {
   const dataDir = path.join(__dirname, 'data');
 
-  // Define an array of file paths to load
+  // Define your file list in the order you want them to load:
+  // (Feel free to modify/extend this as needed)
   const filePaths = [
     path.join(dataDir, 'cars.json'),
     path.join(dataDir, 'carsparking.json'),
@@ -955,7 +971,7 @@ async function loadAllCars() {
     path.join(dataDir, 'kleinanzegencars.json'),
     path.join(dataDir, 'mobiledecars.json'),
     path.join(dataDir, 'cars2.json'),
-    // Four split files for carsbg
+    // And so on, e.g. the four split files for carsbg:
     path.join(dataDir, 'carsbg_part_1.json'),
     path.join(dataDir, 'carsbg_part_2.json'),
     path.join(dataDir, 'carsbg_part_3.json'),
@@ -964,22 +980,14 @@ async function loadAllCars() {
 
   let allCars = [];
 
-  // Process each file sequentially to limit memory pressure
+  // Load files one by one
   for (const filePath of filePaths) {
-    let mapper = mapCarsJson; // default mapper
-    if (filePath.includes('carsparking')) mapper = mapCarsParkingJson;
-    else if (filePath.includes('caaarrssssss')) mapper = mapCaaarrssssssJson;
-    else if (filePath.includes('openlane')) mapper = mapOpenLaneJson;
-    else if (filePath.includes('hertzcars')) mapper = mapHertzCarsJson;
-    else if (filePath.includes('cargr')) mapper = mapCargrJson;
-    else if (filePath.includes('autoscoutcars')) mapper = mapAutoscoutCarsJson;
-    else if (filePath.includes('aclass')) mapper = mapAClassJson;
-
+    const mapper = getMapperFor(filePath);
     try {
       const cars = await loadCarsFromFileInChunks(filePath, mapper);
       console.log(`${path.basename(filePath)} entries mapped: ${cars.length}`);
       allCars = allCars.concat(cars);
-      // Allow a small delay for GC
+      // Optional small delay for GC
       await new Promise((resolve) => setTimeout(resolve, 10));
     } catch (err) {
       console.error(`Error reading ${filePath}:`, err);
@@ -997,7 +1005,7 @@ async function loadAllCars() {
   console.log(`Cars with Images: ${allCars.filter((car) => car.hasImage).length}`);
   console.log(`Cars without Images: ${allCars.filter((car) => !car.hasImage).length}`);
 
-  // OPTIONAL: Unify brand names (e.g. merge all "Mercedes" variants to "Mercedes-Benz")
+  // OPTIONAL: unify brand names (e.g., "Mercedes" -> "Mercedes-Benz", etc.)
   allCars.forEach((car) => {
     if (!car.brand) {
       car.brand = 'Unknown';
@@ -1007,19 +1015,18 @@ async function loadAllCars() {
     if (lowerBrand.includes('mercedes')) {
       car.brand = 'Mercedes-Benz';
     }
-    // Add additional unification rules if needed
+    // Add more brand unification if needed...
   });
 
   return allCars;
 }
 
 // ------------------------------------
-// 7. LAZY-LOADED DATA CACHE
-//    (Instead of loading at startup)
+// 8. LAZY-LOADED DATA CACHE
 // ------------------------------------
 let dataCache = null;
 async function getAllCars() {
-  // Only load data the first time or if you want to always reload
+  // Only load data the first time (lazy load)
   if (!dataCache) {
     dataCache = await loadAllCars();
   }
@@ -1027,7 +1034,7 @@ async function getAllCars() {
 }
 
 // ----------------------
-// 8. Menu Items Definition
+// 9. Menu Items Definition
 // ----------------------
 const menuItems = [
   { name: 'Αυτοκίνητα', href: '/', page: 'cars', icon: 'bi-car-front-fill' },
@@ -1072,13 +1079,13 @@ app.use((req, res, next) => {
 });
 
 // ----------------------
-// 9. Routes Definition
+// 10. Routes Definition
 // ----------------------
-// Make the handler async so we can await getAllCars()
 app.get('/', async (req, res) => {
-  // Load the data only if needed
+  // Load all cars (lazy-loaded)
   const allCars = await getAllCars();
 
+  // Grab query parameters
   const {
     brand,
     model,
@@ -1102,9 +1109,9 @@ app.get('/', async (req, res) => {
     page,
   } = req.query;
 
+  // Filter logic
   let filteredCars = allCars;
 
-  // Filter logic (same as before)
   if (brand) {
     filteredCars = filteredCars.filter(
       (car) => car.brand.toLowerCase() === brand.toLowerCase()
@@ -1241,12 +1248,14 @@ app.get('/', async (req, res) => {
   }
   if (features) {
     if (Array.isArray(features)) {
+      // Multiple features
       filteredCars = filteredCars.filter((car) =>
         features.every((feature) =>
           car.tags.map((tag) => tag.toLowerCase()).includes(feature.toLowerCase())
         )
       );
     } else {
+      // Single feature
       filteredCars = filteredCars.filter((car) =>
         car.tags.map((tag) => tag.toLowerCase()).includes(features.toLowerCase())
       );
@@ -1262,8 +1271,7 @@ app.get('/', async (req, res) => {
   const endIndex = startIndex + ITEMS_PER_PAGE;
   const paginatedCars = filteredCars.slice(startIndex, endIndex);
 
-  // Build filter dropdown arrays
-  // (Notice we use allCars here, not filteredCars, to get the full set for dropdowns)
+  // Build filter dropdown arrays from ALL cars (not just filtered)
   const brands = [...new Set(allCars.map((car) => car.brand).filter(Boolean))].sort();
   let models = [
     ...new Set(
@@ -1298,7 +1306,7 @@ app.get('/', async (req, res) => {
     ...new Set(allCars.flatMap((car) => car.tags)),
   ].filter((feature) => feature).sort();
 
-  // If brand is chosen, refine the model list
+  // If brand is chosen, refine the model list for that brand
   if (brand) {
     models = [
       ...new Set(
@@ -1378,7 +1386,7 @@ app.get('/', async (req, res) => {
 });
 
 // ----------------------
-// 10. Customs Calculations Routes
+// 11. Customs Calculations Routes
 // ----------------------
 app.get('/customs-calculations', (req, res) => {
   res.render('customs_calculator', {
@@ -1446,6 +1454,7 @@ app.post('/customs-calculations', (req, res) => {
     });
   }
 
+  // Example logic for calculations (adjust to your needs):
   let customsDuty = 0;
   if (origin.toLowerCase() === 'non-eu') {
     const customsRate = 0.1; // 10%
@@ -1525,7 +1534,7 @@ app.post('/customs-calculations', (req, res) => {
 });
 
 // ----------------------
-// 11. Other Routes
+// 12. Other Routes
 // ----------------------
 app.get('/contact', (req, res) => {
   res.render('contact', { title: 'Επικοινωνία', activePage: 'contact' });
@@ -1558,7 +1567,7 @@ app.get('/blog', (req, res) => {
 });
 
 // ----------------------
-// 12. Services Routes
+// 13. Services Routes
 // ----------------------
 app.get('/services/repairs', (req, res) => {
   res.render('services/repairs', {
@@ -1582,7 +1591,7 @@ app.get('/services/installations', (req, res) => {
 });
 
 // ----------------------
-// 13. 404 Error Handler
+// 14. 404 Error Handler
 // ----------------------
 app.use((req, res) => {
   res.status(404).render('404', {
@@ -1592,7 +1601,7 @@ app.use((req, res) => {
 });
 
 // ----------------------
-// 14. Start the Server
+// 15. Start the Server
 // ----------------------
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
