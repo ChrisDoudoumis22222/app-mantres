@@ -39,9 +39,7 @@ const buildQueryString = (filters) => {
     .map((key) => {
       if (Array.isArray(filters[key])) {
         return filters[key]
-          .map(
-            (value) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`
-          )
+          .map((value) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
           .join('&');
       }
       return `${encodeURIComponent(key)}=${encodeURIComponent(filters[key])}`;
@@ -171,7 +169,11 @@ function mapCarsParkingJson(car) {
       year = isNaN(parsedYear) ? 'Unknown' : parsedYear;
     }
     let mileage = null;
-    if (car.mileage && typeof car.mileage === 'string' && car.mileage !== 'NC KM') {
+    if (
+      car.mileage &&
+      typeof car.mileage === 'string' &&
+      car.mileage !== 'NC KM'
+    ) {
       const mileageMatch = car.mileage.match(/([\d.,]+)\s*km/i);
       if (mileageMatch) {
         mileage = parseInt(
@@ -291,7 +293,7 @@ function mapCaaarrssssssJson(car) {
       const mileageMatch = car.mileage.match(/([\d.,]+)\s*km/i);
       if (mileageMatch) {
         mileage = parseInt(
-          mileageMatch[1].replace(/\./g, '').replace(',', ''), 
+          mileageMatch[1].replace(/\./g, '').replace(',', ''),
           10
         );
       }
@@ -406,10 +408,7 @@ function mapOpenLaneJson(car) {
     }
 
     let year = 'Unknown';
-    if (
-      car.dateFirstRegistration &&
-      typeof car.dateFirstRegistration === 'string'
-    ) {
+    if (car.dateFirstRegistration && typeof car.dateFirstRegistration === 'string') {
       const dateParts = car.dateFirstRegistration.split('/');
       if (dateParts.length >= 3) {
         const parsedYear = parseInt(dateParts[2], 10);
@@ -613,7 +612,7 @@ function mapCargrJson(car) {
       const mileageMatch = car['ΕπιπλέονΠληροφορίες'].match(/([\d.,]+)\s*χλμ/i);
       if (mileageMatch) {
         mileage = parseInt(
-          mileageMatch[1].replace(/\./g, '').replace(',', ''), 
+          mileageMatch[1].replace(/\./g, '').replace(',', ''),
           10
         );
       }
@@ -953,147 +952,66 @@ function getMapperFor(filePath) {
 }
 
 // ----------------------
-// 7. Load and Normalize Car Data (Sequential file loading)
+// 7. Lazy-Loaded Data Cache & Sequential File Loading
 // ----------------------
-async function loadAllCars() {
-  const dataDir = path.join(__dirname, 'data');
+const dataDir = path.join(__dirname, 'data');
 
-  // Define your file list in the order you want them to load:
-  const filePaths = [
-    path.join(dataDir, 'cars.json'),
-    path.join(dataDir, 'carsparking.json'),
-    path.join(dataDir, 'caaarrssssss.json'),
-    path.join(dataDir, 'openlane.json'),
-    path.join(dataDir, 'hertzcars.json'),
-    path.join(dataDir, 'cargr.json'),
-    path.join(dataDir, 'autoscoutcars.json'),
-    path.join(dataDir, 'aclass.json'),
-    path.join(dataDir, 'kleinanzegencars.json'),
-    path.join(dataDir, 'mobiledecars.json'),
-    path.join(dataDir, 'cars2.json'),
-    // And so on, e.g. the four split files for carsbg:
-    path.join(dataDir, 'carsbg_part_1.json'),
-    path.join(dataDir, 'carsbg_part_2.json'),
-    path.join(dataDir, 'carsbg_part_3.json'),
-    path.join(dataDir, 'carsbg_part_4.json'),
-  ];
+const filePaths = [
+  path.join(dataDir, 'cars.json'),
+  path.join(dataDir, 'carsparking.json'),
+  path.join(dataDir, 'caaarrssssss.json'),
+  path.join(dataDir, 'openlane.json'),
+  path.join(dataDir, 'hertzcars.json'),
+  path.join(dataDir, 'cargr.json'),
+  path.join(dataDir, 'autoscoutcars.json'),
+  path.join(dataDir, 'aclass.json'),
+  path.join(dataDir, 'kleinanzegencars.json'),
+  path.join(dataDir, 'mobiledecars.json'),
+  path.join(dataDir, 'cars2.json'),
+  path.join(dataDir, 'carsbg_part_1.json'),
+  path.join(dataDir, 'carsbg_part_2.json'),
+  path.join(dataDir, 'carsbg_part_3.json'),
+  path.join(dataDir, 'carsbg_part_4.json'),
+];
 
-  let allCars = [];
+let dataCache = [];
+let currentFileIndex = 0;
 
-  // --------------------------------------------------
-  // HOW SEQUENTIAL LOADING WORKS:
-  //   1) We loop through each filePath in filePaths.
-  //   2) For each file, we await loadCarsFromFileInChunks.
-  //      This ensures that the entire file is processed
-  //      before moving on to the next file.
-  // --------------------------------------------------
-  for (const filePath of filePaths) {
-    const mapper = getMapperFor(filePath);
-    try {
-      // Await here ensures each file is fully processed before continuing
-      const cars = await loadCarsFromFileInChunks(filePath, mapper);
-      console.log(`${path.basename(filePath)} entries mapped: ${cars.length}`);
-      allCars = allCars.concat(cars);
-
-      // Optional small delay for GC
-      await new Promise((resolve) => setTimeout(resolve, 10));
-    } catch (err) {
-      console.error(`Error reading ${filePath}:`, err);
-    }
+// Loads the next file (if any) and appends its data to the cache.
+async function loadNextFile() {
+  if (currentFileIndex >= filePaths.length) {
+    console.log("All files loaded.");
+    return [];
   }
-
-  // Sort so cars with images come first
-  allCars.sort((a, b) => {
-    if (a.hasImage && !b.hasImage) return -1;
-    if (!a.hasImage && b.hasImage) return 1;
-    return 0;
-  });
-
-  console.log(`Total Cars Loaded: ${allCars.length}`);
-  console.log(`Cars with Images: ${allCars.filter((car) => car.hasImage).length}`);
-  console.log(`Cars without Images: ${allCars.filter((car) => !car.hasImage).length}`);
-
-  // OPTIONAL: unify brand names
-  allCars.forEach((car) => {
-    if (!car.brand) {
-      car.brand = 'Unknown';
-      return;
-    }
-    const lowerBrand = car.brand.trim().toLowerCase();
-    if (lowerBrand.includes('mercedes')) {
-      car.brand = 'Mercedes-Benz';
-    }
-    // Add more brand unification if needed...
-  });
-
-  return allCars;
+  const filePath = filePaths[currentFileIndex];
+  currentFileIndex++;
+  const mapper = getMapperFor(filePath);
+  try {
+    const cars = await loadCarsFromFileInChunks(filePath, mapper);
+    console.log(`${path.basename(filePath)} entries mapped: ${cars.length}`);
+    dataCache = dataCache.concat(cars);
+    // Optional small delay for GC
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    return cars;
+  } catch (err) {
+    console.error(`Error reading ${filePath}:`, err);
+    return [];
+  }
 }
 
-// ------------------------------------
-// 8. LAZY-LOADED DATA CACHE
-// ------------------------------------
-let dataCache = null;
+// Returns the current cache. Loads the first file if nothing has been loaded yet.
 async function getAllCars() {
-  // Only load data the first time (lazy load)
-  if (!dataCache) {
-    dataCache = await loadAllCars();
+  if (dataCache.length === 0 && currentFileIndex === 0) {
+    await loadNextFile(); // load first file
   }
   return dataCache;
 }
 
 // ----------------------
-// 9. Menu Items Definition
+// 8. Filter Helper Function
 // ----------------------
-const menuItems = [
-  { name: 'Αυτοκίνητα', href: '/', page: 'cars', icon: 'bi-car-front-fill' },
-  {
-    name: 'Υπολογισμός Εκτελωνισμού',
-    href: '/customs-calculations',
-    page: 'customs-calculations',
-    icon: 'bi-calculator-fill',
-  },
-  {
-    name: 'Υπηρεσίες',
-    href: '#',
-    page: 'services',
-    icon: 'bi-cone-striped',
-    dropdown: [
-      { name: 'Επισκευές', href: '/services/repairs', icon: 'bi-tools' },
-      { name: 'Συντήρηση', href: '/services/maintenance', icon: 'bi-wrench-adjustable' },
-      { name: 'Εγκαταστάσεις', href: '/services/installations', icon: 'bi-gear' },
-      { name: 'Μεταφορείς', href: '/transporters', icon: 'bi-truck-front-fill' },
-    ],
-  },
-  {
-    name: 'Τέλη Κυκλοφορίας',
-    href: '/telhkykloforias',
-    page: 'telhkykloforias',
-    icon: 'bi-file-earmark-dollar-fill',
-  },
-  { name: 'Blog', href: '/blog', page: 'blog', icon: 'bi-journal-text' },
-  {
-    name: 'Σχετικά με Εμάς',
-    href: '/about',
-    page: 'about',
-    icon: 'bi-info-circle-fill',
-  },
-  { name: 'Επικοινωνία', href: '/contact', page: 'contact', icon: 'bi-envelope-fill' },
-];
-
-app.use((req, res, next) => {
-  res.locals.menuItems = menuItems;
-  res.locals.activePage = '';
-  next();
-});
-
-// ----------------------
-// 10. Routes Definition
-// ----------------------
-app.get('/', async (req, res) => {
-  // Load all cars (lazy-loaded)
-  const allCars = await getAllCars();
-
-  // Grab query parameters
+function applyFilters(cars, query) {
+  let filteredCars = cars;
   const {
     brand,
     model,
@@ -1114,15 +1032,11 @@ app.get('/', async (req, res) => {
     bodyType,
     condition,
     features,
-    page,
-  } = req.query;
-
-  // Filter logic
-  let filteredCars = allCars;
+  } = query;
 
   if (brand) {
     filteredCars = filteredCars.filter(
-      (car) => car.brand.toLowerCase() === brand.toLowerCase()
+      (car) => car.brand && car.brand.toLowerCase() === brand.toLowerCase()
     );
   }
   if (model) {
@@ -1133,12 +1047,12 @@ app.get('/', async (req, res) => {
   }
   if (fuelType) {
     filteredCars = filteredCars.filter(
-      (car) => car.fuelType.toLowerCase() === fuelType.toLowerCase()
+      (car) => car.fuelType && car.fuelType.toLowerCase() === fuelType.toLowerCase()
     );
   }
   if (transmission) {
     filteredCars = filteredCars.filter(
-      (car) => car.transmission.toLowerCase() === transmission.toLowerCase()
+      (car) => car.transmission && car.transmission.toLowerCase() === transmission.toLowerCase()
     );
   }
   if (color) {
@@ -1228,7 +1142,7 @@ app.get('/', async (req, res) => {
       );
     } else {
       filteredCars = filteredCars.filter(
-        (car) => car.engineType.toLowerCase() === engineType.toLowerCase()
+        (car) => car.engineType && car.engineType.toLowerCase() === engineType.toLowerCase()
       );
     }
   }
@@ -1239,7 +1153,7 @@ app.get('/', async (req, res) => {
       );
     } else {
       filteredCars = filteredCars.filter(
-        (car) => car.bodyType.toLowerCase() === bodyType.toLowerCase()
+        (car) => car.bodyType && car.bodyType.toLowerCase() === bodyType.toLowerCase()
       );
     }
   }
@@ -1250,39 +1164,141 @@ app.get('/', async (req, res) => {
       );
     } else {
       filteredCars = filteredCars.filter(
-        (car) => car.condition.toLowerCase() === condition.toLowerCase()
+        (car) => car.condition && car.condition.toLowerCase() === condition.toLowerCase()
       );
     }
   }
   if (features) {
     if (Array.isArray(features)) {
-      // Multiple features
       filteredCars = filteredCars.filter((car) =>
         features.every((feature) =>
-          car.tags.map((tag) => tag.toLowerCase()).includes(feature.toLowerCase())
+          car.tags && car.tags.map((tag) => tag.toLowerCase()).includes(feature.toLowerCase())
         )
       );
     } else {
-      // Single feature
       filteredCars = filteredCars.filter((car) =>
-        car.tags.map((tag) => tag.toLowerCase()).includes(features.toLowerCase())
+        car.tags && car.tags.map((tag) => tag.toLowerCase()).includes(features.toLowerCase())
       );
     }
   }
+  return filteredCars;
+}
 
-  // -- Pagination --
+// ----------------------
+// 9. Menu Items Definition
+// ----------------------
+const menuItems = [
+  { name: 'Αυτοκίνητα', href: '/', page: 'cars', icon: 'bi-car-front-fill' },
+  {
+    name: 'Υπολογισμός Εκτελωνισμού',
+    href: '/customs-calculations',
+    page: 'customs-calculations',
+    icon: 'bi-calculator-fill',
+  },
+  {
+    name: 'Υπηρεσίες',
+    href: '#',
+    page: 'services',
+    icon: 'bi-cone-striped',
+    dropdown: [
+      { name: 'Επισκευές', href: '/services/repairs', icon: 'bi-tools' },
+      { name: 'Συντήρηση', href: '/services/maintenance', icon: 'bi-wrench-adjustable' },
+      { name: 'Εγκαταστάσεις', href: '/services/installations', icon: 'bi-gear' },
+      { name: 'Μεταφορείς', href: '/transporters', icon: 'bi-truck-front-fill' },
+    ],
+  },
+  {
+    name: 'Τέλη Κυκλοφορίας',
+    href: '/telhkykloforias',
+    page: 'telhkykloforias',
+    icon: 'bi-file-earmark-dollar-fill',
+  },
+  { name: 'Blog', href: '/blog', page: 'blog', icon: 'bi-journal-text' },
+  {
+    name: 'Σχετικά με Εμάς',
+    href: '/about',
+    page: 'about',
+    icon: 'bi-info-circle-fill',
+  },
+  { name: 'Επικοινωνία', href: '/contact', page: 'contact', icon: 'bi-envelope-fill' },
+];
+
+app.use((req, res, next) => {
+  res.locals.menuItems = menuItems;
+  res.locals.activePage = '';
+  next();
+});
+
+// ----------------------
+// 10. Routes Definition
+// ----------------------
+app.get('/', async (req, res) => {
+  // Grab query parameters
+  const {
+    brand,
+    model,
+    fuelType,
+    transmission,
+    color,
+    country,
+    numberOfDoors,
+    minYear,
+    maxYear,
+    minMileage,
+    maxMileage,
+    minPower,
+    maxPower,
+    minPrice,
+    maxPrice,
+    engineType,
+    bodyType,
+    condition,
+    features,
+    page,
+  } = req.query;
+
   const ITEMS_PER_PAGE = 12;
-  const currentPage = parseInt(page, 10) || 1;
-  const totalItems = filteredCars.length;
-  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE) || 1;
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const endIndex = startIndex + ITEMS_PER_PAGE;
+  let currentPage = parseInt(page, 10) || 1;
+  let startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  let endIndex = startIndex + ITEMS_PER_PAGE;
+
+  // Load initial data (first file if not loaded)
+  let allCars = await getAllCars();
+  let filteredCars = applyFilters(allCars, req.query);
+
+  // While we don't have enough cars for the requested page and there are more files to load:
+  while (filteredCars.length < endIndex && currentFileIndex < filePaths.length) {
+    await loadNextFile();
+    allCars = await getAllCars();
+    filteredCars = applyFilters(allCars, req.query);
+  }
+
+  // Calculate pagination info
+  let totalItems = filteredCars.length;
+  let totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE) || 1;
+
+  // Additional logic: If the user is on the last page and more files are available, load the next file.
+  if (currentPage === totalPages && currentFileIndex < filePaths.length) {
+    console.log("User on last page; loading additional file...");
+    await loadNextFile();
+    allCars = await getAllCars();
+    filteredCars = applyFilters(allCars, req.query);
+    totalItems = filteredCars.length;
+    totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE) || 1;
+    // Optional: adjust currentPage if you want to automatically show the new last page.
+  }
+
+  // Sort so cars with images come first
+  filteredCars.sort((a, b) => {
+    if (a.hasImage && !b.hasImage) return -1;
+    if (!a.hasImage && b.hasImage) return 1;
+    return 0;
+  });
+
   const paginatedCars = filteredCars.slice(startIndex, endIndex);
 
   // Build filter dropdown arrays from ALL cars (not just filtered)
-  const brands = [
-    ...new Set(allCars.map((car) => car.brand).filter(Boolean)),
-  ].sort();
+  const brands = [...new Set(allCars.map((car) => car.brand).filter(Boolean))].sort();
   let models = [
     ...new Set(
       allCars
@@ -1291,32 +1307,14 @@ app.get('/', async (req, res) => {
         .filter(Boolean)
     ),
   ].sort();
-  const fuelTypes = [
-    ...new Set(allCars.map((car) => car.fuelType).filter(Boolean)),
-  ].sort();
-  const transmissions = [
-    ...new Set(allCars.map((car) => car.transmission).filter(Boolean)),
-  ].sort();
-  const colors = [
-    ...new Set(allCars.map((car) => car.color).filter(Boolean)),
-  ].sort();
-  const countries = [
-    ...new Set(allCars.map((car) => car.country).filter(Boolean)),
-  ].sort();
-  const engineTypes = [
-    ...new Set(allCars.map((car) => car.engineType).filter(Boolean)),
-  ].sort();
-  const bodyTypes = [
-    ...new Set(allCars.map((car) => car.bodyType).filter(Boolean)),
-  ].sort();
-  const conditions = [
-    ...new Set(allCars.map((car) => car.condition).filter(Boolean)),
-  ].sort();
-  const availableFeatures = [
-    ...new Set(allCars.flatMap((car) => car.tags)),
-  ]
-    .filter((feature) => feature)
-    .sort();
+  const fuelTypes = [...new Set(allCars.map((car) => car.fuelType).filter(Boolean))].sort();
+  const transmissions = [...new Set(allCars.map((car) => car.transmission).filter(Boolean))].sort();
+  const colors = [...new Set(allCars.map((car) => car.color).filter(Boolean))].sort();
+  const countries = [...new Set(allCars.map((car) => car.country).filter(Boolean))].sort();
+  const engineTypes = [...new Set(allCars.map((car) => car.engineType).filter(Boolean))].sort();
+  const bodyTypes = [...new Set(allCars.map((car) => car.bodyType).filter(Boolean))].sort();
+  const conditions = [...new Set(allCars.map((car) => car.condition).filter(Boolean))].sort();
+  const availableFeatures = [...new Set(allCars.flatMap((car) => car.tags))].filter((feature) => feature).sort();
 
   // If brand is chosen, refine the model list for that brand
   if (brand) {
@@ -1523,13 +1521,7 @@ app.post('/customs-calculations', (req, res) => {
   const vatBase = vehicleValue + customsDuty + transportCost;
   const vat = vatBase * vatRate;
 
-  const totalCustoms =
-    vat +
-    customsDuty +
-    fuelTax +
-    transportCost +
-    insuranceCost +
-    customsServiceCost;
+  const totalCustoms = vat + customsDuty + fuelTax + transportCost + insuranceCost + customsServiceCost;
 
   const calculationResult = {
     vehicleValue: vehicleValue.toFixed(2),
