@@ -39,7 +39,9 @@ const buildQueryString = (filters) => {
     .map((key) => {
       if (Array.isArray(filters[key])) {
         return filters[key]
-          .map((value) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+          .map(
+            (value) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`
+          )
           .join('&');
       }
       return `${encodeURIComponent(key)}=${encodeURIComponent(filters[key])}`;
@@ -169,11 +171,7 @@ function mapCarsParkingJson(car) {
       year = isNaN(parsedYear) ? 'Unknown' : parsedYear;
     }
     let mileage = null;
-    if (
-      car.mileage &&
-      typeof car.mileage === 'string' &&
-      car.mileage !== 'NC KM'
-    ) {
+    if (car.mileage && typeof car.mileage === 'string' && car.mileage !== 'NC KM') {
       const mileageMatch = car.mileage.match(/([\d.,]+)\s*km/i);
       if (mileageMatch) {
         mileage = parseInt(
@@ -293,7 +291,7 @@ function mapCaaarrssssssJson(car) {
       const mileageMatch = car.mileage.match(/([\d.,]+)\s*km/i);
       if (mileageMatch) {
         mileage = parseInt(
-          mileageMatch[1].replace(/\./g, '').replace(',', ''),
+          mileageMatch[1].replace(/\./g, '').replace(',', ''), 
           10
         );
       }
@@ -408,7 +406,10 @@ function mapOpenLaneJson(car) {
     }
 
     let year = 'Unknown';
-    if (car.dateFirstRegistration && typeof car.dateFirstRegistration === 'string') {
+    if (
+      car.dateFirstRegistration &&
+      typeof car.dateFirstRegistration === 'string'
+    ) {
       const dateParts = car.dateFirstRegistration.split('/');
       if (dateParts.length >= 3) {
         const parsedYear = parseInt(dateParts[2], 10);
@@ -612,7 +613,7 @@ function mapCargrJson(car) {
       const mileageMatch = car['ΕπιπλέονΠληροφορίες'].match(/([\d.,]+)\s*χλμ/i);
       if (mileageMatch) {
         mileage = parseInt(
-          mileageMatch[1].replace(/\./g, '').replace(',', ''),
+          mileageMatch[1].replace(/\./g, '').replace(',', ''), 
           10
         );
       }
@@ -958,7 +959,6 @@ async function loadAllCars() {
   const dataDir = path.join(__dirname, 'data');
 
   // Define your file list in the order you want them to load:
-  // (Feel free to modify/extend this as needed)
   const filePaths = [
     path.join(dataDir, 'cars.json'),
     path.join(dataDir, 'carsparking.json'),
@@ -980,13 +980,21 @@ async function loadAllCars() {
 
   let allCars = [];
 
-  // Load files one by one
+  // --------------------------------------------------
+  // HOW SEQUENTIAL LOADING WORKS:
+  //   1) We loop through each filePath in filePaths.
+  //   2) For each file, we await loadCarsFromFileInChunks.
+  //      This ensures that the entire file is processed
+  //      before moving on to the next file.
+  // --------------------------------------------------
   for (const filePath of filePaths) {
     const mapper = getMapperFor(filePath);
     try {
+      // Await here ensures each file is fully processed before continuing
       const cars = await loadCarsFromFileInChunks(filePath, mapper);
       console.log(`${path.basename(filePath)} entries mapped: ${cars.length}`);
       allCars = allCars.concat(cars);
+
       // Optional small delay for GC
       await new Promise((resolve) => setTimeout(resolve, 10));
     } catch (err) {
@@ -1005,7 +1013,7 @@ async function loadAllCars() {
   console.log(`Cars with Images: ${allCars.filter((car) => car.hasImage).length}`);
   console.log(`Cars without Images: ${allCars.filter((car) => !car.hasImage).length}`);
 
-  // OPTIONAL: unify brand names (e.g., "Mercedes" -> "Mercedes-Benz", etc.)
+  // OPTIONAL: unify brand names
   allCars.forEach((car) => {
     if (!car.brand) {
       car.brand = 'Unknown';
@@ -1272,7 +1280,9 @@ app.get('/', async (req, res) => {
   const paginatedCars = filteredCars.slice(startIndex, endIndex);
 
   // Build filter dropdown arrays from ALL cars (not just filtered)
-  const brands = [...new Set(allCars.map((car) => car.brand).filter(Boolean))].sort();
+  const brands = [
+    ...new Set(allCars.map((car) => car.brand).filter(Boolean)),
+  ].sort();
   let models = [
     ...new Set(
       allCars
@@ -1304,7 +1314,9 @@ app.get('/', async (req, res) => {
   ].sort();
   const availableFeatures = [
     ...new Set(allCars.flatMap((car) => car.tags)),
-  ].filter((feature) => feature).sort();
+  ]
+    .filter((feature) => feature)
+    .sort();
 
   // If brand is chosen, refine the model list for that brand
   if (brand) {
@@ -1511,7 +1523,13 @@ app.post('/customs-calculations', (req, res) => {
   const vatBase = vehicleValue + customsDuty + transportCost;
   const vat = vatBase * vatRate;
 
-  const totalCustoms = vat + customsDuty + fuelTax + transportCost + insuranceCost + customsServiceCost;
+  const totalCustoms =
+    vat +
+    customsDuty +
+    fuelTax +
+    transportCost +
+    insuranceCost +
+    customsServiceCost;
 
   const calculationResult = {
     vehicleValue: vehicleValue.toFixed(2),
