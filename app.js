@@ -87,13 +87,26 @@ app.use((req, res, next) => {
 });
 
 // ----------------------
-// 3. Routes Definition
+// 3. Cache Car Data to Prevent Reloading on Every Request
+// ----------------------
+let allCarsCache = null;
+
+async function getAllCars() {
+  if (!allCarsCache) {
+    console.log('Loading car data into cache...');
+    allCarsCache = await loadAllCars();
+  }
+  return allCarsCache;
+}
+
+// ----------------------
+// 4. Routes Definition
 // ----------------------
 
 // Home route: load and filter cars
 app.get('/', async (req, res) => {
-  // Load all cars from external module
-  const allCars = await loadAllCars();
+  // Get the cached car data (or load it if not already cached)
+  const allCars = await getAllCars();
 
   // Grab query parameters for filtering
   const {
@@ -281,7 +294,6 @@ app.get('/', async (req, res) => {
   const paginatedCars = filteredCars.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   // ---- Build dropdown arrays from ALL cars ----
-  // Unique brands using a Map (case-insensitive)
   const brandsMap = new Map();
   allCars.forEach(car => {
     let carBrand = car.brand ? car.brand.trim() : 'Unknown';
@@ -292,11 +304,8 @@ app.get('/', async (req, res) => {
   });
   const brands = Array.from(brandsMap.values()).sort();
 
-  // For models, instead of a dropdown, we provide an autocomplete endpoint below.
-  // But if you want to build a static list:
   let models = [];
   if (brand) {
-    // If a brand is chosen, show only models from that brand (case-insensitive)
     const modelsMap = new Map();
     allCars.forEach(car => {
       if (
@@ -313,7 +322,6 @@ app.get('/', async (req, res) => {
     });
     models = Array.from(modelsMap.values()).sort();
   } else {
-    // If no brand is selected, show unique models from all cars:
     const modelsSet = new Set();
     allCars.forEach(car => {
       if (car.model && car.model.trim().toLowerCase() !== 'unknown') {
@@ -334,12 +342,11 @@ app.get('/', async (req, res) => {
     .filter((feature) => feature)
     .sort();
 
-  // Render the page with the static dropdown arrays (if needed)
   res.render('cars', {
     title: 'Διαθέσιμα Αυτοκίνητα',
     cars: paginatedCars,
     brands,
-    models, // You can choose to remove this if you are replacing it with an autocomplete box on the client.
+    models,
     fuelTypes,
     transmissions,
     colors,
@@ -397,12 +404,11 @@ app.get('/', async (req, res) => {
 });
 
 // ----------------------
-// 4. API Endpoint for Autocomplete Models
+// 5. API Endpoint for Autocomplete Models
 // ----------------------
-// This endpoint will return a list of models matching the search term.
 app.get('/api/models', async (req, res) => {
   const term = req.query.term ? req.query.term.toLowerCase() : '';
-  const allCars = await loadAllCars();
+  const allCars = await getAllCars();
   const modelsSet = new Set();
   allCars.forEach(car => {
     if (car.model) {
@@ -417,7 +423,7 @@ app.get('/api/models', async (req, res) => {
 });
 
 // ----------------------
-// 5. Customs Calculations routes
+// 6. Customs Calculations routes
 // ----------------------
 app.get('/customs-calculations', (req, res) => {
   res.render('customs_calculator', {
@@ -501,8 +507,7 @@ app.post('/customs-calculations', (req, res) => {
     fuelTax = co2 <= 100 ? 1600 : co2 <= 140 ? 1900 : co2 <= 180 ? 2200 : 2500;
   }
   const vat = (vehicleValue + customsDuty + transportCost) * 0.24;
-  const totalCustoms =
-    vat + customsDuty + fuelTax + transportCost + insuranceCost + customsServiceCost;
+  const totalCustoms = vat + customsDuty + fuelTax + transportCost + insuranceCost + customsServiceCost;
 
   const calculationResult = {
     vehicleValue: vehicleValue.toFixed(2),
@@ -525,7 +530,7 @@ app.post('/customs-calculations', (req, res) => {
 });
 
 // ----------------------
-// 6. Additional routes
+// 7. Additional routes
 // ----------------------
 app.get('/contact', (req, res) => {
   res.render('contact', { title: 'Επικοινωνία', activePage: 'contact' });
@@ -557,7 +562,6 @@ app.get('/blog', (req, res) => {
   res.render('blog', { title: 'Blog', activePage: 'blog' });
 });
 
-// Services routes
 app.get('/services/repairs', (req, res) => {
   res.render('services/repairs', {
     title: 'Επισκευές',
@@ -588,7 +592,7 @@ app.use((req, res) => {
 });
 
 // ----------------------
-// 7. Start the Server
+// 8. Start the Server
 // ----------------------
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
