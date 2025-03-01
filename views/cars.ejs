@@ -9,11 +9,13 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- jQuery UI CSS for Autocomplete -->
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
     <style>
         body {
             background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
             min-height: 100vh;
-            padding-top: 70px; /* Offset for fixed navbar */
+            padding-top: 70px;
             padding-bottom: 40px;
             font-family: Arial, sans-serif;
         }
@@ -211,17 +213,10 @@
                                 <% }) %>
                             </select>
                         </div>
-                        <!-- Model Filter -->
+                        <!-- Model Filter as Autocomplete Input -->
                         <div class="col-md-4">
-                            <label for="model" class="form-label">Μοντέλο</label>
-                            <select id="model" name="model" class="form-select">
-                                <option value="">Όλα</option>
-                                <% models.forEach(modelItem => { %>
-                                    <option value="<%= modelItem %>" <%= selectedModel && selectedModel.toLowerCase() === modelItem.toLowerCase() ? 'selected' : '' %>>
-                                        <%= modelItem %>
-                                    </option>
-                                <% }) %>
-                            </select>
+                            <label for="modelInput" class="form-label">Μοντέλο</label>
+                            <input type="text" id="modelInput" name="model" class="form-control" placeholder="Αρχίστε να πληκτρολογείτε..." value="<%= selectedModel %>">
                         </div>
                         <!-- Transmission Filter -->
                         <div class="col-md-4">
@@ -399,11 +394,10 @@
                 <% cars.forEach(car => { %>
                     <div class="col-lg-4 col-md-6 mb-4">
                         <div class="card h-100">
-                            <!-- Primary Image with fallback if images not defined -->
                             <img 
                                 src="<%= (car.images && car.images.length > 0) ? car.images[0] : 'https://via.placeholder.com/300x200?text=No+Image' %>" 
                                 class="card-img-top" 
-                                alt="<%= car.title %>"
+                                alt="Εικόνα <%= (typeof car.title === 'string' ? (car.title.length > 100 ? car.title.substring(0, 100) + '...' : car.title) : 'Αυτοκίνητο') %>"
                                 loading="lazy"
                                 onerror="this.onerror=null; this.src='https://via.placeholder.com/300x200?text=No+Image';">
                             <div class="card-body d-flex flex-column">
@@ -428,7 +422,7 @@
                                 </p>
                                 <p class="card-text">
                                     <strong>Χιλιόμετρα:</strong> 
-                                    <%= car.mileage ? car.mileage.toLocaleString('el-GR') : 'Δε Διατίθεται' %> km
+                                    <%= (Number.isFinite(car.mileage) ? car.mileage.toLocaleString('el-GR') : 'Δε Διατίθεται') %> km
                                 </p>
                                 <p class="card-text">
                                     <strong>Ισχύς:</strong> 
@@ -457,18 +451,20 @@
                                 <% if (car.tags && car.tags.length > 0) { %>
                                     <p class="card-text">
                                         <strong>Χαρακτηριστικά:</strong> 
-                                        <%= car.tags.join(', ') %>
+                                        <%= Array.isArray(car.tags) 
+                                              ? (car.tags.length > 10 
+                                                  ? car.tags.slice(0,10).join(', ') + '...' 
+                                                  : car.tags.join(', '))
+                                              : '' %>
                                     </p>
                                 <% } %>
-
-                                <!-- Image Thumbnails -->
                                 <p class="card-text"><strong>Διαθέσιμες Εικόνες:</strong></p>
                                 <div class="d-flex flex-wrap mb-3">
                                     <% if (car.images && car.images.length > 0) { %>
                                         <% car.images.forEach(image => { %>
                                             <img 
                                                 src="<%= image %>" 
-                                                alt="Εικόνα <%= car.title %>" 
+                                                alt="Εικόνα <%= (typeof car.title === 'string' ? (car.title.length > 100 ? car.title.substring(0, 100) + '...' : car.title) : 'Αυτοκίνητο') %>" 
                                                 class="img-thumbnail me-2 mb-2" 
                                                 style="width: 60px; height: 60px;"
                                                 loading="lazy"
@@ -476,7 +472,6 @@
                                         <% }) %>
                                     <% } %>
                                 </div>
-
                                 <a href="<%= car.link %>" class="btn btn-primary mt-auto">Περισσότερα</a>
                             </div>
                         </div>
@@ -484,15 +479,12 @@
                 <% }) %>
             </div>
 
-            <!-- Compact Pagination -->
+            <!-- Pagination -->
             <nav aria-label="Page navigation">
                 <ul class="pagination justify-content-center">
-                    <!-- Previous Button -->
                     <% if (currentPage > 1) { %>
                         <li class="page-item">
-                            <a class="page-link"
-                               href="/?<%= buildQueryString({ ...filters, page: currentPage - 1 }) %>"
-                               aria-label="Προηγούμενη">
+                            <a class="page-link" href="/?<%= buildQueryString({ ...filters, page: currentPage - 1 }) %>" aria-label="Προηγούμενη">
                                 <span aria-hidden="true">&laquo;</span>
                             </a>
                         </li>
@@ -503,59 +495,33 @@
                             </a>
                         </li>
                     <% } %>
-
                     <% 
-                       // Show up to 5 pages around the current page
-                       let visibleRange = 2; // pages before/after
+                       let visibleRange = 2;
                        let startPage = currentPage - visibleRange;
                        let endPage = currentPage + visibleRange;
-
-                       // Bound the start/end
-                       if (startPage < 1) {
-                         startPage = 1;
-                       }
-                       if (endPage > totalPages) {
-                         endPage = totalPages;
-                       }
-
-                       // If there's a gap before startPage
-                       if (startPage > 1) {
+                       if (startPage < 1) startPage = 1;
+                       if (endPage > totalPages) endPage = totalPages;
+                       if (startPage > 1) { 
                     %>
-                        <li class="page-item">
-                            <a class="page-link" href="/?<%= buildQueryString({ ...filters, page: 1 }) %>">1</a>
-                        </li>
+                        <li class="page-item"><a class="page-link" href="/?<%= buildQueryString({ ...filters, page: 1 }) %>">1</a></li>
                         <% if (startPage > 2) { %>
                             <li class="page-item disabled"><a class="page-link" href="#">...</a></li>
                         <% } %>
                     <% } %>
-
                     <% for (let i = startPage; i <= endPage; i++) { %>
                         <li class="page-item <%= currentPage === i ? 'active' : '' %>">
-                            <a class="page-link" href="/?<%= buildQueryString({ ...filters, page: i }) %>">
-                                <%= i %>
-                            </a>
+                            <a class="page-link" href="/?<%= buildQueryString({ ...filters, page: i }) %>"><%= i %></a>
                         </li>
                     <% } %>
-
-                    <% // If there's a gap after endPage
-                       if (endPage < totalPages) {
-                         if (endPage < totalPages - 1) {
-                    %>
-                        <li class="page-item disabled"><a class="page-link" href="#">...</a></li>
+                    <% if (endPage < totalPages) { 
+                         if (endPage < totalPages - 1) { %>
+                            <li class="page-item disabled"><a class="page-link" href="#">...</a></li>
                     <% } %>
-                        <li class="page-item">
-                            <a class="page-link" href="/?<%= buildQueryString({ ...filters, page: totalPages }) %>">
-                                <%= totalPages %>
-                            </a>
-                        </li>
+                        <li class="page-item"><a class="page-link" href="/?<%= buildQueryString({ ...filters, page: totalPages }) %>"><%= totalPages %></a></li>
                     <% } %>
-
-                    <!-- Next Button -->
                     <% if (currentPage < totalPages) { %>
                         <li class="page-item">
-                            <a class="page-link"
-                               href="/?<%= buildQueryString({ ...filters, page: currentPage + 1 }) %>"
-                               aria-label="Επόμενη">
+                            <a class="page-link" href="/?<%= buildQueryString({ ...filters, page: currentPage + 1 }) %>" aria-label="Επόμενη">
                                 <span aria-hidden="true">&raquo;</span>
                             </a>
                         </li>
@@ -577,15 +543,40 @@
     <!-- Footer -->
     <footer class="text-center mt-5">
         <div class="container">
-            <p class="mb-0">
-                &copy; <%= new Date().getFullYear() %> Η Εταιρεία σας. Όλα τα δικαιώματα διατηρούνται.
-            </p>
+            <p class="mb-0">&copy; <%= new Date().getFullYear() %> Η Εταιρεία σας. Όλα τα δικαιώματα διατηρούνται.</p>
         </div>
     </footer>
 
-    <!-- Bootstrap 5 JS and dependencies (Popper) -->
+    <!-- jQuery and jQuery UI JS for Autocomplete -->
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+    <!-- Bootstrap 5 JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
     <script>
+        // Initialize autocomplete for the Model input
+        $(function() {
+            $("#modelInput").autocomplete({
+                source: function(request, response) {
+                    $.ajax({
+                        url: "/api/models",
+                        dataType: "json",
+                        data: { term: request.term },
+                        success: function(data) {
+                            response(data);
+                        },
+                        error: function() {
+                            response([]);
+                        }
+                    });
+                },
+                minLength: 2,
+                select: function(event, ui) {
+                    $("#modelInput").val(ui.item.value);
+                }
+            });
+        });
+
         // Initialize Bootstrap tooltips
         const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
         tooltipTriggerList.map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
