@@ -10,7 +10,6 @@
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     <style>
-        /* Existing Styles */
         body {
             background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
             min-height: 100vh;
@@ -97,10 +96,10 @@
             margin-bottom: 20px;
         }
         .toggle-filters button {
-            border: 2px solid #007bff; /* Blue border */
-            background-color: #007bff; /* Blue background */
-            color: #ffffff; /* White text */
-            font-weight: bold; /* Bold text */
+            border: 2px solid #007bff;
+            background-color: #007bff;
+            color: #ffffff;
+            font-weight: bold;
             cursor: pointer;
             font-size: 1rem;
             display: flex;
@@ -110,7 +109,7 @@
             transition: background-color 0.3s, border-color 0.3s;
         }
         .toggle-filters button:hover {
-            background-color: #0056b3; /* Darker blue on hover */
+            background-color: #0056b3;
             border-color: #0056b3;
         }
         .toggle-filters button .bi-arrow-down {
@@ -193,49 +192,46 @@
 
     <div class="container-custom my-5">
         <h2>Διαθέσιμα Αυτοκίνητα</h2>
+
         <!-- Filters Section -->
         <form method="GET" action="/">
-            <!-- First Filter Card: Brand, Model, Fuel Type, Transmission -->
+            <!-- First Filter Card: Brand, Model, Transmission -->
             <div class="filter-section">
                 <div class="card filter-card">
                     <div class="row g-3">
                         <!-- Brand Filter -->
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <label for="brand" class="form-label">Μάρκα</label>
                             <select id="brand" name="brand" class="form-select" onchange="this.form.submit()">
                                 <option value="">Όλες</option>
                                 <% brands.forEach(brandItem => { %>
-                                    <option value="<%= brandItem %>" <%= selectedBrand.toLowerCase() === brandItem.toLowerCase() ? 'selected' : '' %>><%= brandItem %></option>
+                                    <option value="<%= brandItem %>" <%= selectedBrand && selectedBrand.toLowerCase() === brandItem.toLowerCase() ? 'selected' : '' %>>
+                                        <%= brandItem %>
+                                    </option>
                                 <% }) %>
                             </select>
                         </div>
                         <!-- Model Filter -->
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <label for="model" class="form-label">Μοντέλο</label>
                             <select id="model" name="model" class="form-select">
                                 <option value="">Όλα</option>
                                 <% models.forEach(modelItem => { %>
-                                    <option value="<%= modelItem %>" <%= selectedModel.toLowerCase() === modelItem.toLowerCase() ? 'selected' : '' %>><%= modelItem %></option>
-                                <% }) %>
-                            </select>
-                        </div>
-                        <!-- Fuel Type Filter -->
-                        <div class="col-md-3">
-                            <label for="fuelType" class="form-label">Τύπος Καυσίμου</label>
-                            <select id="fuelType" name="fuelType" class="form-select">
-                                <option value="">Όλοι</option>
-                                <% fuelTypes.forEach(fuel => { %>
-                                    <option value="<%= fuel %>" <%= selectedFuelType.toLowerCase() === fuel.toLowerCase() ? 'selected' : '' %>><%= fuel %></option>
+                                    <option value="<%= modelItem %>" <%= selectedModel && selectedModel.toLowerCase() === modelItem.toLowerCase() ? 'selected' : '' %>>
+                                        <%= modelItem %>
+                                    </option>
                                 <% }) %>
                             </select>
                         </div>
                         <!-- Transmission Filter -->
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <label for="transmission" class="form-label">Μετάδοση</label>
                             <select id="transmission" name="transmission" class="form-select">
                                 <option value="">Όλες</option>
                                 <% transmissions.forEach(trans => { %>
-                                    <option value="<%= trans %>" <%= selectedTransmission.toLowerCase() === trans.toLowerCase() ? 'selected' : '' %>><%= trans %></option>
+                                    <option value="<%= trans %>" <%= selectedTransmission && selectedTransmission.toLowerCase() === trans.toLowerCase() ? 'selected' : '' %>>
+                                        <%= trans %>
+                                    </option>
                                 <% }) %>
                             </select>
                         </div>
@@ -243,7 +239,7 @@
                 </div>
             </div>
 
-            <!-- Second Filter Card: Engine Type, Body Type, Condition -->
+            <!-- Second Filter Card: Τύπος Κινητήρα, Τύπος Σώματος, Κατάσταση -->
             <div class="filter-section">
                 <div class="card filter-card">
                     <div class="row g-3">
@@ -253,7 +249,13 @@
                             <select id="engineType" name="engineType" class="form-select">
                                 <option value="">Όλοι</option>
                                 <% engineTypes.forEach(engine => { %>
-                                    <option value="<%= engine %>" <%= Array.isArray(selectedEngineType) ? (selectedEngineType.includes(engine) ? 'selected' : '') : (selectedEngineType === engine ? 'selected' : '') %>><%= engine %></option>
+                                    <option value="<%= engine %>"
+                                        <%= Array.isArray(selectedEngineType) 
+                                                ? (selectedEngineType.includes(engine) ? 'selected' : '') 
+                                                : (selectedEngineType === engine ? 'selected' : '') 
+                                        %>>
+                                        <%= engine %>
+                                    </option>
                                 <% }) %>
                             </select>
                         </div>
@@ -263,7 +265,13 @@
                             <select id="bodyType" name="bodyType" class="form-select">
                                 <option value="">Όλοι</option>
                                 <% bodyTypes.forEach(body => { %>
-                                    <option value="<%= body %>" <%= Array.isArray(selectedBodyType) ? (selectedBodyType.includes(body) ? 'selected' : '') : (selectedBodyType === body ? 'selected' : '') %>><%= body %></option>
+                                    <option value="<%= body %>"
+                                        <%= Array.isArray(selectedBodyType) 
+                                                ? (selectedBodyType.includes(body) ? 'selected' : '') 
+                                                : (selectedBodyType === body ? 'selected' : '') 
+                                        %>>
+                                        <%= body %>
+                                    </option>
                                 <% }) %>
                             </select>
                         </div>
@@ -271,9 +279,15 @@
                         <div class="col-md-4">
                             <label for="condition" class="form-label">Κατάσταση</label>
                             <select id="condition" name="condition" class="form-select">
-                                <option value="">Όλες</option>
+                                <option value="">Όλοι</option>
                                 <% conditions.forEach(cond => { %>
-                                    <option value="<%= cond %>" <%= Array.isArray(selectedCondition) ? (selectedCondition.includes(cond) ? 'selected' : '') : (selectedCondition === cond ? 'selected' : '') %>><%= cond %></option>
+                                    <option value="<%= cond %>"
+                                        <%= Array.isArray(selectedCondition) 
+                                                ? (selectedCondition.includes(cond) ? 'selected' : '') 
+                                                : (selectedCondition === cond ? 'selected' : '') 
+                                        %>>
+                                        <%= cond %>
+                                    </option>
                                 <% }) %>
                             </select>
                         </div>
@@ -283,7 +297,10 @@
 
             <!-- Toggle Button for Additional Filters -->
             <div class="toggle-filters">
-                <button class="btn fw-bold collapsed d-flex align-items-center" type="button" data-bs-toggle="collapse" data-bs-target="#additionalFilters" aria-expanded="false" aria-controls="additionalFilters">
+                <button class="btn fw-bold collapsed d-flex align-items-center" 
+                        type="button" data-bs-toggle="collapse" 
+                        data-bs-target="#additionalFilters" 
+                        aria-expanded="false" aria-controls="additionalFilters">
                     Περισσότερα Φίλτρα <i class="bi bi-arrow-down"></i>
                 </button>
             </div>
@@ -297,20 +314,28 @@
                             <!-- Year Filters -->
                             <div class="col-md-3">
                                 <label for="minYear" class="form-label">Ελάχιστο Έτος</label>
-                                <input type="number" id="minYear" name="minYear" class="form-control" value="<%= minYear %>" min="1900" max="<%= new Date().getFullYear() %>" placeholder="Από">
+                                <input type="number" id="minYear" name="minYear" class="form-control" 
+                                       value="<%= minYear %>" 
+                                       min="1900" max="<%= new Date().getFullYear() %>" 
+                                       placeholder="Από">
                             </div>
                             <div class="col-md-3">
                                 <label for="maxYear" class="form-label">Μέγιστο Έτος</label>
-                                <input type="number" id="maxYear" name="maxYear" class="form-control" value="<%= maxYear %>" min="1900" max="<%= new Date().getFullYear() %>" placeholder="Έως">
+                                <input type="number" id="maxYear" name="maxYear" class="form-control" 
+                                       value="<%= maxYear %>" 
+                                       min="1900" max="<%= new Date().getFullYear() %>" 
+                                       placeholder="Έως">
                             </div>
                             <!-- Mileage Filters -->
                             <div class="col-md-3">
-                                <label for="minMileage" class="form-label">Ελάχιστο Χιλιόμετρα</label>
-                                <input type="number" id="minMileage" name="minMileage" class="form-control" value="<%= minMileage %>" min="0" placeholder="Από">
+                                <label for="minMileage" class="form-label">Ελάχιστα Χιλιόμετρα</label>
+                                <input type="number" id="minMileage" name="minMileage" class="form-control" 
+                                       value="<%= minMileage %>" min="0" placeholder="Από">
                             </div>
                             <div class="col-md-3">
-                                <label for="maxMileage" class="form-label">Μέγιστο Χιλιόμετρα</label>
-                                <input type="number" id="maxMileage" name="maxMileage" class="form-control" value="<%= maxMileage %>" min="0" placeholder="Έως">
+                                <label for="maxMileage" class="form-label">Μέγιστα Χιλιόμετρα</label>
+                                <input type="number" id="maxMileage" name="maxMileage" class="form-control" 
+                                       value="<%= maxMileage %>" min="0" placeholder="Έως">
                             </div>
                         </div>
                     </div>
@@ -323,11 +348,13 @@
                             <!-- Power Filters -->
                             <div class="col-md-3">
                                 <label for="minPower" class="form-label">Ελάχιστη Ισχύς (kW)</label>
-                                <input type="number" id="minPower" name="minPower" class="form-control" value="<%= minPower %>" min="0" placeholder="Από">
+                                <input type="number" id="minPower" name="minPower" class="form-control" 
+                                       value="<%= minPower %>" min="0" placeholder="Από">
                             </div>
                             <div class="col-md-3">
                                 <label for="maxPower" class="form-label">Μέγιστη Ισχύς (kW)</label>
-                                <input type="number" id="maxPower" name="maxPower" class="form-control" value="<%= maxPower %>" min="0" placeholder="Έως">
+                                <input type="number" id="maxPower" name="maxPower" class="form-control" 
+                                       value="<%= maxPower %>" min="0" placeholder="Έως">
                             </div>
                             <!-- Number of Doors Filter -->
                             <div class="col-md-3">
@@ -342,9 +369,11 @@
                             <!-- Price Filters -->
                             <div class="col-md-3">
                                 <label for="minPrice" class="form-label">Ελάχιστη Τιμή (€)</label>
-                                <input type="number" id="minPrice" name="minPrice" class="form-control" value="<%= minPrice %>" min="0" step="0.01" placeholder="Από">
+                                <input type="number" id="minPrice" name="minPrice" class="form-control" 
+                                       value="<%= minPrice %>" min="0" step="0.01" placeholder="Από">
                                 <label for="maxPrice" class="form-label mt-2">Μέγιστη Τιμή (€)</label>
-                                <input type="number" id="maxPrice" name="maxPrice" class="form-control" value="<%= maxPrice %>" min="0" step="0.01" placeholder="Έως">
+                                <input type="number" id="maxPrice" name="maxPrice" class="form-control" 
+                                       value="<%= maxPrice %>" min="0" step="0.01" placeholder="Έως">
                             </div>
                         </div>
                     </div>
@@ -370,47 +399,84 @@
                 <% cars.forEach(car => { %>
                     <div class="col-lg-4 col-md-6 mb-4">
                         <div class="card h-100">
-                            <!-- Primary Image with onerror fallback -->
+                            <!-- Primary Image with fallback if images not defined -->
                             <img 
-                                src="<%= car.images[0] %>" 
+                                src="<%= (car.images && car.images.length > 0) ? car.images[0] : 'https://via.placeholder.com/300x200?text=No+Image' %>" 
                                 class="card-img-top" 
                                 alt="<%= car.title %>"
                                 loading="lazy"
                                 onerror="this.onerror=null; this.src='https://via.placeholder.com/300x200?text=No+Image';">
                             <div class="card-body d-flex flex-column">
                                 <h5 class="card-title"><%= car.title %></h5>
-                                <p class="card-text"><strong>Τιμή:</strong> €<%= car.price.toLocaleString('el-GR') %></p>
+                                <p class="card-text">
+                                    <strong>Τιμή:</strong> 
+                                    €<%= car.price.toLocaleString('el-GR') %>
+                                </p>
                                 <% if (car.priceWithoutTax != null) { %>
-                                    <p class="card-text"><strong>Τιμή Χωρίς Φόρο:</strong> €<%= car.priceWithoutTax.toLocaleString('el-GR') %></p>
+                                    <p class="card-text">
+                                        <strong>Τιμή Χωρίς Φόρο:</strong> 
+                                        €<%= car.priceWithoutTax.toLocaleString('el-GR') %>
+                                    </p>
                                 <% } else { %>
-                                    <p class="card-text"><strong>Τιμή Χωρίς Φόρο:</strong> Δε Διατίθεται</p>
-                                <% } %>                                
-                                <p class="card-text"><strong>Έτος:</strong> <%= (car.year !== "Unknown") ? car.year : 'Δε Διατίθεται' %></p>
-                                <p class="card-text"><strong>Χιλιόμετρα:</strong> <%= car.mileage ? car.mileage.toLocaleString('el-GR') : 'Δε Διατίθεται' %> km</p>
-                                <p class="card-text"><strong>Ισχύς:</strong> <%= (car.power !== null) ? car.power + ' kW' : 'Δε Διατίθεται' %></p>
-                                <p class="card-text"><strong>Τύπος Καυσίμου:</strong> <%= (car.fuelType !== "Δε Διατίθεται") ? car.fuelType : 'Δε Διατίθεται' %></p>
-                                <!-- Transmission Field -->
-                                <p class="card-text"><strong>Μετάδοση:</strong> <%= car.transmission !== "Δε Διατίθεται" ? car.transmission : 'Δε Διατίθεται' %></p>
-                                <p class="card-text"><strong>Αριθμός Πόρτας:</strong> <%= car.doors %></p>
-                                <p class="card-text"><strong>Τύπος Κινητήρα:</strong> <%= (car.engineType !== "Δε Διατίθεται") ? car.engineType : 'Δε Διατίθεται' %></p>
-                                <p class="card-text"><strong>Τύπος Σώματος:</strong> <%= (car.bodyType !== "Δε Διατίθεται") ? car.bodyType : 'Δε Διατίθεται' %></p>
-                                <p class="card-text"><strong>Κατάσταση:</strong> <%= car.condition %></p>
-                                <% if (car.tags && car.tags.length > 0) { %>
-                                    <p class="card-text"><strong>Χαρακτηριστικά:</strong> <%= car.tags.join(', ') %></p>
+                                    <p class="card-text">
+                                        <strong>Τιμή Χωρίς Φόρο:</strong> Δε Διατίθεται
+                                    </p>
                                 <% } %>
+                                <p class="card-text">
+                                    <strong>Έτος:</strong> 
+                                    <%= (car.year !== "Unknown") ? car.year : 'Δε Διατίθεται' %>
+                                </p>
+                                <p class="card-text">
+                                    <strong>Χιλιόμετρα:</strong> 
+                                    <%= car.mileage ? car.mileage.toLocaleString('el-GR') : 'Δε Διατίθεται' %> km
+                                </p>
+                                <p class="card-text">
+                                    <strong>Ισχύς:</strong> 
+                                    <%= (car.power !== null) ? car.power + ' kW' : 'Δε Διατίθεται' %>
+                                </p>
+                                <p class="card-text">
+                                    <strong>Μετάδοση:</strong> 
+                                    <%= car.transmission !== "Δε Διατίθεται" ? car.transmission : 'Δε Διατίθεται' %>
+                                </p>
+                                <p class="card-text">
+                                    <strong>Αριθμός Πόρτας:</strong> 
+                                    <%= car.doors %>
+                                </p>
+                                <p class="card-text">
+                                    <strong>Τύπος Κινητήρα:</strong> 
+                                    <%= (car.engineType !== "Δε Διατίθεται") ? car.engineType : 'Δε Διατίθεται' %>
+                                </p>
+                                <p class="card-text">
+                                    <strong>Τύπος Σώματος:</strong> 
+                                    <%= (car.bodyType !== "Δε Διατίθεται") ? car.bodyType : 'Δε Διατίθεται' %>
+                                </p>
+                                <p class="card-text">
+                                    <strong>Κατάσταση:</strong> 
+                                    <%= car.condition %>
+                                </p>
+                                <% if (car.tags && car.tags.length > 0) { %>
+                                    <p class="card-text">
+                                        <strong>Χαρακτηριστικά:</strong> 
+                                        <%= car.tags.join(', ') %>
+                                    </p>
+                                <% } %>
+
                                 <!-- Image Thumbnails -->
                                 <p class="card-text"><strong>Διαθέσιμες Εικόνες:</strong></p>
                                 <div class="d-flex flex-wrap mb-3">
-                                    <% car.images.forEach(image => { %>
-                                        <img 
-                                            src="<%= image %>" 
-                                            alt="Εικόνα <%= car.title %>" 
-                                            class="img-thumbnail me-2 mb-2" 
-                                            style="width: 60px; height: 60px;"
-                                            loading="lazy"
-                                            onerror="this.onerror=null; this.src='https://via.placeholder.com/60x60?text=No+Image';">
-                                    <% }) %>
+                                    <% if (car.images && car.images.length > 0) { %>
+                                        <% car.images.forEach(image => { %>
+                                            <img 
+                                                src="<%= image %>" 
+                                                alt="Εικόνα <%= car.title %>" 
+                                                class="img-thumbnail me-2 mb-2" 
+                                                style="width: 60px; height: 60px;"
+                                                loading="lazy"
+                                                onerror="this.onerror=null; this.src='https://via.placeholder.com/60x60?text=No+Image';">
+                                        <% }) %>
+                                    <% } %>
                                 </div>
+
                                 <a href="<%= car.link %>" class="btn btn-primary mt-auto">Περισσότερα</a>
                             </div>
                         </div>
@@ -418,12 +484,15 @@
                 <% }) %>
             </div>
 
-            <!-- Pagination -->
+            <!-- Compact Pagination -->
             <nav aria-label="Page navigation">
                 <ul class="pagination justify-content-center">
+                    <!-- Previous Button -->
                     <% if (currentPage > 1) { %>
                         <li class="page-item">
-                            <a class="page-link" href="/?<%= buildQueryString(Object.assign({}, filters, { page: currentPage - 1 })) %>" aria-label="Προηγούμενη">
+                            <a class="page-link"
+                               href="/?<%= buildQueryString({ ...filters, page: currentPage - 1 }) %>"
+                               aria-label="Προηγούμενη">
                                 <span aria-hidden="true">&laquo;</span>
                             </a>
                         </li>
@@ -435,40 +504,58 @@
                         </li>
                     <% } %>
 
-                    <% let startPage = Math.max(1, currentPage - 2); %>
-                    <% let endPage = Math.min(totalPages, currentPage + 2); %>
+                    <% 
+                       // Show up to 5 pages around the current page
+                       let visibleRange = 2; // pages before/after
+                       let startPage = currentPage - visibleRange;
+                       let endPage = currentPage + visibleRange;
 
-                    <% if (startPage > 1) { %>
+                       // Bound the start/end
+                       if (startPage < 1) {
+                         startPage = 1;
+                       }
+                       if (endPage > totalPages) {
+                         endPage = totalPages;
+                       }
+
+                       // If there's a gap before startPage
+                       if (startPage > 1) {
+                    %>
                         <li class="page-item">
-                            <a class="page-link" href="/?<%= buildQueryString(Object.assign({}, filters, { page: 1 })) %>">1</a>
+                            <a class="page-link" href="/?<%= buildQueryString({ ...filters, page: 1 }) %>">1</a>
                         </li>
                         <% if (startPage > 2) { %>
-                            <li class="page-item disabled">
-                                <a class="page-link" href="#">...</a>
-                            </li>
+                            <li class="page-item disabled"><a class="page-link" href="#">...</a></li>
                         <% } %>
                     <% } %>
 
                     <% for (let i = startPage; i <= endPage; i++) { %>
                         <li class="page-item <%= currentPage === i ? 'active' : '' %>">
-                            <a class="page-link" href="/?<%= buildQueryString(Object.assign({}, filters, { page: i })) %>"><%= i %></a>
+                            <a class="page-link" href="/?<%= buildQueryString({ ...filters, page: i }) %>">
+                                <%= i %>
+                            </a>
                         </li>
                     <% } %>
 
-                    <% if (endPage < totalPages) { %>
-                        <% if (endPage < totalPages - 1) { %>
-                            <li class="page-item disabled">
-                                <a class="page-link" href="#">...</a>
-                            </li>
-                        <% } %>
+                    <% // If there's a gap after endPage
+                       if (endPage < totalPages) {
+                         if (endPage < totalPages - 1) {
+                    %>
+                        <li class="page-item disabled"><a class="page-link" href="#">...</a></li>
+                    <% } %>
                         <li class="page-item">
-                            <a class="page-link" href="/?<%= buildQueryString(Object.assign({}, filters, { page: totalPages })) %>"><%= totalPages %></a>
+                            <a class="page-link" href="/?<%= buildQueryString({ ...filters, page: totalPages }) %>">
+                                <%= totalPages %>
+                            </a>
                         </li>
                     <% } %>
 
+                    <!-- Next Button -->
                     <% if (currentPage < totalPages) { %>
                         <li class="page-item">
-                            <a class="page-link" href="/?<%= buildQueryString(Object.assign({}, filters, { page: currentPage + 1 })) %>" aria-label="Επόμενη">
+                            <a class="page-link"
+                               href="/?<%= buildQueryString({ ...filters, page: currentPage + 1 }) %>"
+                               aria-label="Επόμενη">
                                 <span aria-hidden="true">&raquo;</span>
                             </a>
                         </li>
@@ -481,6 +568,7 @@
                     <% } %>
                 </ul>
             </nav>
+
         <% } else { %>
             <p>Δεν βρέθηκαν αυτοκίνητα με τα κριτήρια αναζήτησής σας.</p>
         <% } %>
@@ -489,7 +577,9 @@
     <!-- Footer -->
     <footer class="text-center mt-5">
         <div class="container">
-            <p class="mb-0">&copy; <%= new Date().getFullYear() %> Η Εταιρεία σας. Όλα τα δικαιώματα διατηρούνται.</p>
+            <p class="mb-0">
+                &copy; <%= new Date().getFullYear() %> Η Εταιρεία σας. Όλα τα δικαιώματα διατηρούνται.
+            </p>
         </div>
     </footer>
 
@@ -497,25 +587,19 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // Initialize Bootstrap tooltips
-        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-        const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-          return new bootstrap.Tooltip(tooltipTriggerEl)
-        })
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
 
-        // Persist toggle state using localStorage
+        // Persist toggle state for additional filters using localStorage
         document.addEventListener('DOMContentLoaded', function () {
             const additionalFilters = document.getElementById('additionalFilters');
             const toggleButton = document.querySelector('.toggle-filters button');
 
-            // Check localStorage for toggle state
             if (localStorage.getItem('additionalFiltersState') === 'shown') {
-                const bsCollapse = new bootstrap.Collapse(additionalFilters, {
-                    toggle: true
-                });
+                new bootstrap.Collapse(additionalFilters, { toggle: true });
                 toggleButton.classList.remove('collapsed');
             }
 
-            // Listen for toggle events to save state
             additionalFilters.addEventListener('shown.bs.collapse', function () {
                 localStorage.setItem('additionalFiltersState', 'shown');
             });
