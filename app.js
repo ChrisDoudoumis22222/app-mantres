@@ -181,63 +181,6 @@ function mapCarsJson(car) {
   }
 }
 
-//CAAAAARRRSSSS.JSON FILE
-function mapCaaarrssssssJson(car) {
-  try {
-    const title = car.title || 'Δε Διατίθεται';
-    const link = car.link || '#';
-    let price = 0;
-    if (typeof car.price === 'string') {
-      let cleaned = car.price.replace(/[€,\s]/g, '');
-      price = parseFloat(cleaned) || 0;
-    }
-    const priceWithoutTax = car.priceWithoutTax || null;
-    let year = 'Unknown';
-    if (car.registrationDate) {
-      const parts = car.registrationDate.split('/');
-      if (parts.length === 2) year = parseInt(parts[1], 10) || 'Unknown';
-    }
-    let mileage = null;
-    if (car.mileage && typeof car.mileage === 'string') {
-      const cleanedMileage = car.mileage.replace(/[^\d]/g, '');
-      mileage = parseInt(cleanedMileage, 10) || null;
-    }
-    const transmission = car.transmission || 'Unknown';
-    const fuelType = car.fuelType || 'Unknown';
-    const power = car.power || null;
-    const tags = Array.isArray(car.tags) ? car.tags : [];
-    const deliveryInfo = car.deliveryInfo || { label: '', price: '' };
-    const images = (Array.isArray(car.images) && car.images.length > 0)
-      ? car.images
-      : ['https://via.placeholder.com/300x200?text=No+Image'];
-    const parts = title.split(' ');
-    const brand = parts.length > 0 ? parts[0] : 'Unknown';
-    const model = parts.slice(1).join(' ') || 'Unknown';
-    const location = deliveryInfo.label || 'Unknown';
-
-    return {
-      title,
-      link,
-      price,
-      priceWithoutTax,
-      year,
-      mileage,
-      transmission,
-      fuelType,
-      power,
-      tags,
-      deliveryInfo,
-      images,
-      brand,
-      model,
-      location,
-    };
-  } catch (error) {
-    console.error('Error mapping caaarrssssss.json item:', error);
-    return null;
-  }
-}
-
 
 // Mapping for aclass.json (Kleinanzeigen style)
 function mapAClassJson(car) {
@@ -986,4 +929,3 @@ function loadCarsFromFileInChunks(filePath, mapFn) {
     });
   });
 }
-
