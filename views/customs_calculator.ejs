@@ -137,6 +137,7 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
+                    <!-- Display only selected items -->
                     <li class="nav-item">
                         <a class="nav-link" href="/">
                             <i class="bi bi-car-front-fill me-1"></i> Αυτοκίνητα
@@ -163,21 +164,7 @@
                             <i class="bi bi-file-earmark-dollar-fill me-1"></i> Τέλη Κυκλοφορίας
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/blog">
-                            <i class="bi bi-journal-text me-1"></i> Blog
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/about">
-                            <i class="bi bi-info-circle-fill me-1"></i> Σχετικά με Εμάς
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/contact">
-                            <i class="bi bi-envelope-fill me-1"></i> Επικοινωνία
-                        </a>
-                    </li>
+                    <!-- Blog, Σχετικά με Εμάς and Επικοινωνία are intentionally omitted -->
                 </ul>
                 <form class="d-flex my-2 my-lg-0" method="GET" action="/search">
                     <input class="form-control me-2" type="search" placeholder="Αναζήτηση" aria-label="Search" name="query">
@@ -333,7 +320,6 @@
                 </div>
 
                 <div class="info-section">
-                    <!-- Each info section header now includes an icon and indicator -->
                     <h3 onclick="toggleInfo('step1')">
                         1. Υπολογισμός Δασμών και ΦΠΑ
                         <i class="bi bi-chevron-down"></i>
@@ -553,3 +539,4 @@
     </script>
 </body>
 </html>
+
