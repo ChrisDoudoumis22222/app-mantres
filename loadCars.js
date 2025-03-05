@@ -25,6 +25,7 @@ const mapperLookup = {
   'openlane.json': mapOpenLaneJson,
   'hertzcars.json': mapHertzCarsJson,
   'cargr.json': mapCargrJson,
+  'cargrnew.json': mapCargrJson, // Added new file mapping
   'autoscoutcars.json': mapAutoscoutCarsJson,
   'aclass.json': mapAClassJson,
   'kleinanzegencars.json': mapKleinanzegencarsJson,
@@ -49,14 +50,14 @@ const mapperLookup = {
   'carvagocarsnew_part_13.json': mapCarsJson,
 };
 
-// Our file sequence (first -> last). If you want to remove the single
-// 'carvagocarsnew.json' (not split), just omit it here.
+// Our file sequence (first -> last).
 const fileNames = [
   'carsparking.json',
   'caaarrssssss.json',
   'openlane.json',
   'hertzcars.json',
   'cargr.json',
+  'cargrnew.json',  // Added new file to be loaded
   'autoscoutcars.json',
   'aclass.json',
   'kleinanzegencars.json',
