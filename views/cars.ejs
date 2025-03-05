@@ -153,56 +153,83 @@
 <body>
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/">Αυτοκίνητα</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
-                aria-controls="navbarNav" aria-expanded="false" aria-label="Εναλλαγή πλοήγηση">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <% menuItems.forEach(item => { %>
-                        <% if (item.dropdown && item.dropdown.length > 0) { %>
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle <%= activePage === item.page ? 'active' : '' %>"
-                                   href="<%= item.href %>"
-                                   id="<%= item.page %>Dropdown"
-                                   role="button"
-                                   data-bs-toggle="dropdown"
-                                   aria-expanded="false">
-                                    <i class="bi <%= item.icon %> me-1"></i>
-                                    <%= item.name %>
-                                </a>
-                                <ul class="dropdown-menu" aria-labelledby="<%= item.page %>Dropdown">
-                                    <% item.dropdown.forEach(dropItem => { %>
-                                        <li>
-                                            <a class="dropdown-item" href="<%= dropItem.href %>">
-                                                <i class="bi <%= dropItem.icon %> me-2"></i>
-                                                <%= dropItem.name %>
-                                            </a>
-                                        </li>
-                                    <% }) %>
-                                </ul>
-                            </li>
-                        <% } else { %>
-                            <li class="nav-item">
-                                <a class="nav-link <%= activePage === item.page ? 'active' : '' %>"
-                                   href="<%= item.href %>">
-                                    <i class="bi <%= item.icon %> me-1"></i>
-                                    <%= item.name %>
-                                </a>
-                            </li>
-                        <% } %>
+      <div class="container-fluid">
+        <a class="navbar-brand" href="/">Αυτοκίνητα</a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+          aria-controls="navbarNav"
+          aria-expanded="false"
+          aria-label="Εναλλαγή πλοήγησης"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav ms-auto">
+
+            <!-- Define which items to hide -->
+            <% const hiddenItems = ['Blog', 'Σχετικά με Εμάς', 'Επικοινωνία']; %>
+
+            <!-- Filter out the hidden items -->
+            <% menuItems
+               .filter(item => !hiddenItems.includes(item.name))
+               .forEach(item => { %>
+
+              <% if (item.dropdown && item.dropdown.length > 0) { %>
+                <li class="nav-item dropdown">
+                  <a
+                    class="nav-link dropdown-toggle <%= activePage === item.page ? 'active' : '' %>"
+                    href="<%= item.href %>"
+                    id="<%= item.page %>Dropdown"
+                    role="button"
+                    data-bs-toggle="dropdown"
+                    aria-expanded="false"
+                  >
+                    <i class="bi <%= item.icon %> me-1"></i>
+                    <%= item.name %>
+                  </a>
+                  <ul class="dropdown-menu" aria-labelledby="<%= item.page %>Dropdown">
+                    <% item.dropdown.forEach(dropItem => { %>
+                      <li>
+                        <a class="dropdown-item" href="<%= dropItem.href %>">
+                          <i class="bi <%= dropItem.icon %> me-2"></i>
+                          <%= dropItem.name %>
+                        </a>
+                      </li>
                     <% }) %>
-                    <li class="nav-item">
-                        <form class="d-flex my-2 my-lg-0" method="GET" action="/search">
-                            <input class="form-control me-2" type="search" placeholder="Αναζήτηση" aria-label="Search" name="query">
-                            <button class="btn btn-outline-success" type="submit">Αναζήτηση</button>
-                        </form>
-                    </li>
-                </ul>
-            </div>
+                  </ul>
+                </li>
+              <% } else { %>
+                <li class="nav-item">
+                  <a
+                    class="nav-link <%= activePage === item.page ? 'active' : '' %>"
+                    href="<%= item.href %>"
+                  >
+                    <i class="bi <%= item.icon %> me-1"></i>
+                    <%= item.name %>
+                  </a>
+                </li>
+              <% } %>
+            <% }) %>
+
+            <!-- Search Form -->
+            <li class="nav-item">
+              <form class="d-flex my-2 my-lg-0" method="GET" action="/search">
+                <input
+                  class="form-control me-2"
+                  type="search"
+                  placeholder="Αναζήτηση"
+                  aria-label="Search"
+                  name="query"
+                >
+                <button class="btn btn-outline-success" type="submit">Αναζήτηση</button>
+              </form>
+            </li>
+          </ul>
         </div>
+      </div>
     </nav>
 
     <div class="container-custom my-5">
