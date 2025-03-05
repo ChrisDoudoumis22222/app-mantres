@@ -3,10 +3,24 @@
 const express = require('express');
 const path = require('path');
 const bodyParser = require('body-parser');
-const { loadAllCars } = require('./loadCars'); // Loader module for JSON data
+const fs = require('fs');
+const JSONStream = require('JSONStream');
+const { loadAllCars } = require('./loadCars'); // Ensure loadAllCars is exported from loadCars.js
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// ----------------------
+// Memory Usage Logger Function
+// ----------------------
+function logMemoryUsage() {
+  const memUsage = process.memoryUsage();
+  console.log('Memory Usage:');
+  console.log('  RSS:', (memUsage.rss / (1024 * 1024)).toFixed(2) + ' MB');
+  console.log('  Heap Total:', (memUsage.heapTotal / (1024 * 1024)).toFixed(2) + ' MB');
+  console.log('  Heap Used:', (memUsage.heapUsed / (1024 * 1024)).toFixed(2) + ' MB');
+  console.log('  External:', (memUsage.external / (1024 * 1024)).toFixed(2) + ' MB');
+}
 
 // ----------------------
 // 1. View Engine & Middleware Setup
@@ -22,19 +36,14 @@ app.use(bodyParser.urlencoded({ extended: false }));
 // ----------------------
 const buildQueryString = (filters) => {
   return Object.keys(filters)
-    .filter(
-      (key) =>
-        filters[key] !== undefined &&
-        filters[key] !== '' &&
-        filters[key].length !== 0
-    )
+    .filter((key) => {
+      const val = filters[key];
+      return val !== undefined && val !== '' && val.length !== 0;
+    })
     .map((key) => {
       if (Array.isArray(filters[key])) {
         return filters[key]
-          .map(
-            (value) =>
-              `${encodeURIComponent(key)}=${encodeURIComponent(value)}`
-          )
+          .map((value) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
           .join('&');
       }
       return `${encodeURIComponent(key)}=${encodeURIComponent(filters[key])}`;
@@ -87,7 +96,7 @@ app.use((req, res, next) => {
 });
 
 // ----------------------
-// 3. Cache Car Data to Prevent Reloading on Every Request
+// 3. Cache Car Data to Prevent Reloading on Every Request (for the home route)
 // ----------------------
 let allCarsCache = null;
 
@@ -95,6 +104,8 @@ async function getAllCars() {
   if (!allCarsCache) {
     console.log('Loading car data into cache...');
     allCarsCache = await loadAllCars();
+    // Log memory usage right after loading the cars into cache
+    logMemoryUsage();
   }
   return allCarsCache;
 }
@@ -103,9 +114,9 @@ async function getAllCars() {
 // 4. Routes Definition
 // ----------------------
 
-// Home route: load and filter cars
+// Home route (uses cached data for full filtering/pagination)
 app.get('/', async (req, res) => {
-  // Get the cached car data (or load it if not already cached)
+  // Get cached data (or load if not already cached)
   const allCars = await getAllCars();
 
   // Grab query parameters for filtering
@@ -132,160 +143,121 @@ app.get('/', async (req, res) => {
     page,
   } = req.query;
 
-  let filteredCars = allCars;
+  // Start with all cars, then filter out any without valid images
+  let filteredCars = allCars.filter(car =>
+    car.images &&
+    Array.isArray(car.images) &&
+    car.images.some(img => typeof img === 'string' && img.trim() !== '')
+  );
 
-  // --- Case-insensitive filtering for brand ---
+  // --- Filtering logic (case-insensitive) ---
   if (brand) {
-    filteredCars = filteredCars.filter(
-      (car) => car.brand && car.brand.toLowerCase() === brand.toLowerCase()
-    );
+    filteredCars = filteredCars.filter(car => car.brand && car.brand.toLowerCase() === brand.toLowerCase());
   }
-  
-  // Other filters
   if (model) {
     const lowerModel = model.toLowerCase();
-    filteredCars = filteredCars.filter(
-      (car) => car.model && car.model.toLowerCase().includes(lowerModel)
-    );
+    filteredCars = filteredCars.filter(car => car.model && car.model.toLowerCase().includes(lowerModel));
   }
   if (fuelType) {
-    filteredCars = filteredCars.filter(
-      (car) => car.fuelType.toLowerCase() === fuelType.toLowerCase()
-    );
+    filteredCars = filteredCars.filter(car => car.fuelType && car.fuelType.toLowerCase() === fuelType.toLowerCase());
   }
   if (transmission) {
-    filteredCars = filteredCars.filter(
-      (car) => car.transmission.toLowerCase() === transmission.toLowerCase()
-    );
+    filteredCars = filteredCars.filter(car => car.transmission && car.transmission.toLowerCase() === transmission.toLowerCase());
   }
   if (color) {
-    filteredCars = filteredCars.filter(
-      (car) => car.color && car.color.toLowerCase() === color.toLowerCase()
-    );
+    filteredCars = filteredCars.filter(car => car.color && car.color.toLowerCase() === color.toLowerCase());
   }
   if (country) {
-    filteredCars = filteredCars.filter(
-      (car) => car.country && car.country.toLowerCase() === country.toLowerCase()
-    );
+    filteredCars = filteredCars.filter(car => car.country && car.country.toLowerCase() === country.toLowerCase());
   }
   if (numberOfDoors) {
     const doors = parseInt(numberOfDoors, 10);
     if (!isNaN(doors)) {
-      filteredCars = filteredCars.filter((car) => car.doors === doors);
+      filteredCars = filteredCars.filter(car => car.doors === doors);
     }
   }
   if (minYear) {
     const minY = parseInt(minYear, 10);
     if (!isNaN(minY)) {
-      filteredCars = filteredCars.filter(
-        (car) => car.year !== 'Unknown' && car.year >= minY
-      );
+      filteredCars = filteredCars.filter(car => car.year !== 'Unknown' && car.year >= minY);
     }
   }
   if (maxYear) {
     const maxY = parseInt(maxYear, 10);
     if (!isNaN(maxY)) {
-      filteredCars = filteredCars.filter(
-        (car) => car.year !== 'Unknown' && car.year <= maxY
-      );
+      filteredCars = filteredCars.filter(car => car.year !== 'Unknown' && car.year <= maxY);
     }
   }
   if (minMileage) {
     const minM = parseInt(minMileage, 10);
     if (!isNaN(minM)) {
-      filteredCars = filteredCars.filter(
-        (car) => car.mileage !== null && car.mileage >= minM
-      );
+      filteredCars = filteredCars.filter(car => car.mileage !== null && car.mileage >= minM);
     }
   }
   if (maxMileage) {
     const maxM = parseInt(maxMileage, 10);
     if (!isNaN(maxM)) {
-      filteredCars = filteredCars.filter(
-        (car) => car.mileage !== null && car.mileage <= maxM
-      );
+      filteredCars = filteredCars.filter(car => car.mileage !== null && car.mileage <= maxM);
     }
   }
   if (minPower) {
     const minP = parseInt(minPower, 10);
     if (!isNaN(minP)) {
-      filteredCars = filteredCars.filter(
-        (car) => car.power !== null && car.power >= minP
-      );
+      filteredCars = filteredCars.filter(car => car.power !== null && car.power >= minP);
     }
   }
   if (maxPower) {
     const maxP = parseInt(maxPower, 10);
     if (!isNaN(maxP)) {
-      filteredCars = filteredCars.filter(
-        (car) => car.power !== null && car.power <= maxP
-      );
+      filteredCars = filteredCars.filter(car => car.power !== null && car.power <= maxP);
     }
   }
   if (minPrice) {
     const minPr = parseFloat(minPrice);
     if (!isNaN(minPr)) {
-      filteredCars = filteredCars.filter(
-        (car) => car.price && car.price >= minPr
-      );
+      filteredCars = filteredCars.filter(car => car.price && car.price >= minPr);
     }
   }
   if (maxPrice) {
     const maxPr = parseFloat(maxPrice);
     if (!isNaN(maxPr)) {
-      filteredCars = filteredCars.filter(
-        (car) => car.price && car.price <= maxPr
-      );
+      filteredCars = filteredCars.filter(car => car.price && car.price <= maxPr);
     }
   }
   if (engineType) {
     if (Array.isArray(engineType)) {
-      filteredCars = filteredCars.filter((car) =>
-        engineType.includes(car.engineType)
-      );
+      filteredCars = filteredCars.filter(car => engineType.includes(car.engineType));
     } else {
-      filteredCars = filteredCars.filter(
-        (car) => car.engineType.toLowerCase() === engineType.toLowerCase()
-      );
+      filteredCars = filteredCars.filter(car => car.engineType && car.engineType.toLowerCase() === engineType.toLowerCase());
     }
   }
   if (bodyType) {
     if (Array.isArray(bodyType)) {
-      filteredCars = filteredCars.filter((car) =>
-        bodyType.includes(car.bodyType)
-      );
+      filteredCars = filteredCars.filter(car => bodyType.includes(car.bodyType));
     } else {
-      filteredCars = filteredCars.filter(
-        (car) => car.bodyType.toLowerCase() === bodyType.toLowerCase()
-      );
+      filteredCars = filteredCars.filter(car => car.bodyType && car.bodyType.toLowerCase() === bodyType.toLowerCase());
     }
   }
   if (condition) {
     if (Array.isArray(condition)) {
-      filteredCars = filteredCars.filter((car) =>
-        condition.includes(car.condition)
-      );
+      filteredCars = filteredCars.filter(car => condition.includes(car.condition));
     } else {
-      filteredCars = filteredCars.filter(
-        (car) => car.condition.toLowerCase() === condition.toLowerCase()
-      );
+      filteredCars = filteredCars.filter(car => car.condition && car.condition.toLowerCase() === condition.toLowerCase());
     }
   }
   if (features) {
     if (Array.isArray(features)) {
-      filteredCars = filteredCars.filter((car) =>
-        features.every((feature) =>
-          car.tags.map((tag) => tag.toLowerCase()).includes(feature.toLowerCase())
-        )
+      filteredCars = filteredCars.filter(car =>
+        features.every(feature => car.tags.map(tag => tag.toLowerCase()).includes(feature.toLowerCase()))
       );
     } else {
-      filteredCars = filteredCars.filter((car) =>
-        car.tags.map((tag) => tag.toLowerCase()).includes(features.toLowerCase())
+      filteredCars = filteredCars.filter(car =>
+        car.tags.map(tag => tag.toLowerCase()).includes(features.toLowerCase())
       );
     }
   }
 
-  // Pagination
+  // Pagination (12 items per page)
   const ITEMS_PER_PAGE = 12;
   const currentPage = parseInt(page, 10) || 1;
   const totalItems = filteredCars.length;
@@ -293,13 +265,13 @@ app.get('/', async (req, res) => {
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const paginatedCars = filteredCars.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
-  // ---- Build dropdown arrays from ALL cars ----
+  // Build dropdown arrays from the full (unfiltered) car list
   const brandsMap = new Map();
   allCars.forEach(car => {
     let carBrand = car.brand ? car.brand.trim() : 'Unknown';
-    const lowerBrand = carBrand.toLowerCase();
-    if (!brandsMap.has(lowerBrand)) {
-      brandsMap.set(lowerBrand, carBrand);
+    const lowerB = carBrand.toLowerCase();
+    if (!brandsMap.has(lowerB)) {
+      brandsMap.set(lowerB, carBrand);
     }
   });
   const brands = Array.from(brandsMap.values()).sort();
@@ -331,16 +303,14 @@ app.get('/', async (req, res) => {
     models = Array.from(modelsSet).sort();
   }
 
-  const fuelTypes = [...new Set(allCars.map((car) => car.fuelType).filter(Boolean))].sort();
-  const transmissions = [...new Set(allCars.map((car) => car.transmission).filter(Boolean))].sort();
-  const colors = [...new Set(allCars.map((car) => car.color).filter(Boolean))].sort();
-  const countries = [...new Set(allCars.map((car) => car.country).filter(Boolean))].sort();
-  const engineTypes = [...new Set(allCars.map((car) => car.engineType).filter(Boolean))].sort();
-  const bodyTypes = [...new Set(allCars.map((car) => car.bodyType).filter(Boolean))].sort();
-  const conditions = [...new Set(allCars.map((car) => car.condition).filter(Boolean))].sort();
-  const availableFeatures = [...new Set(allCars.flatMap((car) => car.tags))]
-    .filter((feature) => feature)
-    .sort();
+  const fuelTypes = [...new Set(allCars.map(car => car.fuelType).filter(Boolean))].sort();
+  const transmissions = [...new Set(allCars.map(car => car.transmission).filter(Boolean))].sort();
+  const colors = [...new Set(allCars.map(car => car.color).filter(Boolean))].sort();
+  const countries = [...new Set(allCars.map(car => car.country).filter(Boolean))].sort();
+  const engineTypes = [...new Set(allCars.map(car => car.engineType).filter(Boolean))].sort();
+  const bodyTypes = [...new Set(allCars.map(car => car.bodyType).filter(Boolean))].sort();
+  const conditions = [...new Set(allCars.map(car => car.condition).filter(Boolean))].sort();
+  const availableFeatures = [...new Set(allCars.flatMap(car => car.tags))].filter(feature => feature).sort();
 
   res.render('cars', {
     title: 'Διαθέσιμα Αυτοκίνητα',
@@ -403,9 +373,56 @@ app.get('/', async (req, res) => {
   });
 });
 
-// ----------------------
-// 5. API Endpoint for Autocomplete Models
-// ----------------------
+// --- New Route: Dynamic Streaming Pagination for Cars ---
+app.get('/cars-dynamic', (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const pageSize = 20;
+  const startIndex = (page - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const filterMake = req.query.make; // optional filter by make
+
+  let results = [];
+  let count = 0;
+
+  const stream = fs.createReadStream(path.join(__dirname, 'data', 'cars.json'), { encoding: 'utf8' })
+    .pipe(JSONStream.parse('*')); // Assumes top-level array
+
+  stream.on('data', item => {
+    if (filterMake && item.make !== filterMake) return;
+    if (count < startIndex) {
+      count++;
+      return;
+    }
+    if (count >= endIndex) {
+      stream.destroy(); // Stop reading further once pageSize is reached
+      return;
+    }
+    results.push(item);
+    count++;
+  });
+
+  stream.on('end', () => {
+    res.json(results);
+  });
+
+  stream.on('error', err => {
+    console.error('Error streaming JSON data:', err);
+    res.status(500).json({ error: 'Error processing data.' });
+  });
+});
+
+// --- New Route: Memory Usage ---
+// This route returns the current memory usage of the Node.js process in MB.
+app.get('/memory', (req, res) => {
+  const memUsage = process.memoryUsage();
+  res.json({
+    rss: (memUsage.rss / (1024 * 1024)).toFixed(2) + ' MB',
+    heapTotal: (memUsage.heapTotal / (1024 * 1024)).toFixed(2) + ' MB',
+    heapUsed: (memUsage.heapUsed / (1024 * 1024)).toFixed(2) + ' MB',
+    external: (memUsage.external / (1024 * 1024)).toFixed(2) + ' MB'
+  });
+});
+
 app.get('/api/models', async (req, res) => {
   const term = req.query.term ? req.query.term.toLowerCase() : '';
   const allCars = await getAllCars();
@@ -422,9 +439,6 @@ app.get('/api/models', async (req, res) => {
   res.json(models);
 });
 
-// ----------------------
-// 6. Customs Calculations routes
-// ----------------------
 app.get('/customs-calculations', (req, res) => {
   res.render('customs_calculator', {
     title: 'Υπολογιστής Εκτελωνισμού',
@@ -436,26 +450,8 @@ app.get('/customs-calculations', (req, res) => {
 });
 
 app.post('/customs-calculations', (req, res) => {
-  const {
-    value,
-    engineCapacity,
-    co2Emissions,
-    year,
-    distance,
-    origin,
-    insurance,
-    customsService,
-  } = req.body;
-  if (
-    !value ||
-    !engineCapacity ||
-    !co2Emissions ||
-    !year ||
-    !distance ||
-    !origin ||
-    !insurance ||
-    !customsService
-  ) {
+  const { value, engineCapacity, co2Emissions, year, distance, origin, insurance, customsService } = req.body;
+  if (!value || !engineCapacity || !co2Emissions || !year || !distance || !origin || !insurance || !customsService) {
     return res.render('customs_calculator', {
       title: 'Υπολογιστής Εκτελωνισμού',
       activePage: 'customs-calculations',
@@ -529,9 +525,6 @@ app.post('/customs-calculations', (req, res) => {
   });
 });
 
-// ----------------------
-// 7. Additional routes
-// ----------------------
 app.get('/contact', (req, res) => {
   res.render('contact', { title: 'Επικοινωνία', activePage: 'contact' });
 });
@@ -541,10 +534,7 @@ app.get('/about', (req, res) => {
 });
 
 app.get('/transporters', (req, res) => {
-  res.render('transporters', {
-    title: 'Μεταφορείς Αυτοκινήτων',
-    activePage: 'services',
-  });
+  res.render('transporters', { title: 'Μεταφορείς Αυτοκινήτων', activePage: 'services' });
 });
 
 app.get('/vin', (req, res) => {
@@ -552,10 +542,7 @@ app.get('/vin', (req, res) => {
 });
 
 app.get('/telhkykloforias', (req, res) => {
-  res.render('telhkykloforias', {
-    title: 'Τέλη Κυκλοφορίας',
-    activePage: 'telhkykloforias',
-  });
+  res.render('telhkykloforias', { title: 'Τέλη Κυκλοφορίας', activePage: 'telhkykloforias' });
 });
 
 app.get('/blog', (req, res) => {
@@ -563,37 +550,22 @@ app.get('/blog', (req, res) => {
 });
 
 app.get('/services/repairs', (req, res) => {
-  res.render('services/repairs', {
-    title: 'Επισκευές',
-    activePage: 'services',
-  });
+  res.render('services/repairs', { title: 'Επισκευές', activePage: 'services' });
 });
 
 app.get('/services/maintenance', (req, res) => {
-  res.render('services/maintenance', {
-    title: 'Συντήρηση',
-    activePage: 'services',
-  });
+  res.render('services/maintenance', { title: 'Συντήρηση', activePage: 'services' });
 });
 
 app.get('/services/installations', (req, res) => {
-  res.render('services/installations', {
-    title: 'Εγκαταστάσεις',
-    activePage: 'services',
-  });
+  res.render('services/installations', { title: 'Εγκαταστάσεις', activePage: 'services' });
 });
 
-// 404 Error handler
+// 404 Error Handler
 app.use((req, res) => {
-  res.status(404).render('404', {
-    title: 'Σελίδα Δεν Βρέθηκε',
-    activePage: '',
-  });
+  res.status(404).render('404', { title: 'Σελίδα Δεν Βρέθηκε', activePage: '' });
 });
 
-// ----------------------
-// 8. Start the Server
-// ----------------------
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
