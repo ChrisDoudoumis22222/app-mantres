@@ -6,7 +6,7 @@ const { chain } = require('stream-chain');
 const { parser } = require('stream-json');
 const { streamArray } = require('stream-json/streamers/StreamArray');
 
-// Import mapper functions from the mappers folder
+// 1) Import your various mapper functions here
 const mapCarsJson = require('./mappers/carsMapper');
 const mapCarsParkingJson = require('./mappers/carsParkingMapper');
 const mapCaaarrssssssJson = require('./mappers/caaarrssssssMapper');
@@ -17,9 +17,9 @@ const mapAutoscoutCarsJson = require('./mappers/autoscoutcarsMapper');
 const mapAClassJson = require('./mappers/aclassMapper');
 const mapKleinanzegencarsJson = require('./mappers/kleinanzegencarsMapper');
 
-// Lookup table: file name → mapper function
+// 2) Setup mapperLookup for each file
+//    - Use the same mapper (mapCarsJson) for all the carvagocarsnew part files.
 const mapperLookup = {
-  'cars.json': mapCarsJson,
   'carsparking.json': mapCarsParkingJson,
   'caaarrssssss.json': mapCaaarrssssssJson,
   'openlane.json': mapOpenLaneJson,
@@ -28,122 +28,190 @@ const mapperLookup = {
   'autoscoutcars.json': mapAutoscoutCarsJson,
   'aclass.json': mapAClassJson,
   'kleinanzegencars.json': mapKleinanzegencarsJson,
-  // For the carsbg parts, assuming they have the same structure as cars.json:
   'carsbg_part_1.json': mapCarsJson,
   'carsbg_part_2.json': mapCarsJson,
   'carsbg_part_3.json': mapCarsJson,
   'carsbg_part_4.json': mapCarsJson,
+
+  // Add all carvagocarsnew parts here
+  'carvagocarsnew_part_1.json': mapCarsJson,
+  'carvagocarsnew_part_2.json': mapCarsJson,
+  'carvagocarsnew_part_3.json': mapCarsJson,
+  'carvagocarsnew_part_4.json': mapCarsJson,
+  'carvagocarsnew_part_5.json': mapCarsJson,
+  'carvagocarsnew_part_6.json': mapCarsJson,
+  'carvagocarsnew_part_7.json': mapCarsJson,
+  'carvagocarsnew_part_8.json': mapCarsJson,
+  'carvagocarsnew_part_9.json': mapCarsJson,
+  'carvagocarsnew_part_10.json': mapCarsJson,
+  'carvagocarsnew_part_11.json': mapCarsJson,
+  'carvagocarsnew_part_12.json': mapCarsJson,
+  'carvagocarsnew_part_13.json': mapCarsJson,
 };
 
-let dataCache = null;
+// Our file sequence (first -> last). If you want to remove the single
+// 'carvagocarsnew.json' (not split), just omit it here.
+const fileNames = [
+  'carsparking.json',
+  'caaarrssssss.json',
+  'openlane.json',
+  'hertzcars.json',
+  'cargr.json',
+  'autoscoutcars.json',
+  'aclass.json',
+  'kleinanzegencars.json',
+  'carsbg_part_1.json',
+  'carsbg_part_2.json',
+  'carsbg_part_3.json',
+  'carsbg_part_4.json',
 
-function loadCarsFromFileInChunks(filePath, mapFn) {
-  return new Promise((resolve, reject) => {
-    fs.access(filePath, fs.constants.F_OK, (err) => {
-      if (err) {
+  // List all carvagocarsnew split files in the order you want to load them:
+  'carvagocarsnew_part_1.json',
+  'carvagocarsnew_part_2.json',
+  'carvagocarsnew_part_3.json',
+  'carvagocarsnew_part_4.json',
+  'carvagocarsnew_part_5.json',
+  'carvagocarsnew_part_6.json',
+  'carvagocarsnew_part_7.json',
+  'carvagocarsnew_part_8.json',
+  'carvagocarsnew_part_9.json',
+  'carvagocarsnew_part_10.json',
+  'carvagocarsnew_part_11.json',
+  'carvagocarsnew_part_12.json',
+  'carvagocarsnew_part_13.json',
+
+  // Optionally, remove this if you're no longer using the single large file:
+  // 'carvagocarsnew.json',
+];
+
+// OPTIONAL: Memory threshold (MB) to prevent huge usage
+const MEMORY_THRESHOLD_MB = 2000; // ~2GB
+
+/**
+ * Checks if memory usage is above threshold, throws an error if so.
+ */
+function checkMemory() {
+  const used = process.memoryUsage().heapUsed / 1024 / 1024; // in MB
+  if (used > MEMORY_THRESHOLD_MB) {
+    console.warn(
+      `Memory usage ${Math.round(used)} MB exceeds threshold of ${MEMORY_THRESHOLD_MB} MB.`
+    );
+    throw new Error('Memory usage exceeded threshold - stopping streaming.');
+  }
+}
+
+/**
+ * loadSingleFileCars(fileIndex, filterCallback)
+ *  - Loads one file (from fileNames[fileIndex]) using a streaming parser.
+ *  - Applies the mapper and filter callback immediately on each record.
+ *  - Uses a lower chunk size (highWaterMark) to reduce memory usage.
+ *  - Returns an array of matching cars.
+ */
+async function loadSingleFileCars(fileIndex, filterCallback) {
+  const dataDir = path.join(__dirname, 'data');
+
+  if (fileIndex < 0 || fileIndex >= fileNames.length) {
+    console.warn('Invalid file index or no more files left.');
+    return [];
+  }
+
+  const fileName = fileNames[fileIndex];
+  const filePath = path.join(dataDir, fileName);
+  const mapperFn = mapperLookup[fileName] || mapCarsJson;
+
+  // Temporary array for this file's results
+  const singleFileCars = [];
+
+  // Check memory before starting this file
+  checkMemory();
+
+  await new Promise((resolve, reject) => {
+    fs.access(filePath, fs.constants.F_OK, (accessErr) => {
+      if (accessErr) {
         console.warn(`File not found: ${filePath}. Skipping...`);
-        return resolve([]);
+        return resolve();
       }
 
-      const results = [];
-      let count = 0;
       const pipeline = chain([
-        fs.createReadStream(filePath, { encoding: 'utf8' }),
+        fs.createReadStream(filePath, {
+          encoding: 'utf8',
+          highWaterMark: 16 * 1024, // 16KB chunk size for lower memory footprint
+        }),
         parser(),
         streamArray(),
       ]);
 
       pipeline.on('data', ({ value }) => {
-        count++;
         try {
-          const mapped = mapFn(value);
-          if (mapped) results.push(mapped);
+          const mappedCar = mapperFn(value);
+          if (mappedCar && filterCallback(mappedCar)) {
+            singleFileCars.push(mappedCar);
+          }
         } catch (mapError) {
-          console.error(`Error mapping item in ${filePath}:`, mapError);
+          console.error(`Error mapping item in ${fileName}:`, mapError);
         }
       });
 
       pipeline.on('end', () => {
-        console.log(`${path.basename(filePath)} => streamed ${count} items`);
-        resolve(results);
+        console.log(`Finished reading ${fileName}, total matches: ${singleFileCars.length}`);
+        resolve();
       });
 
-      pipeline.on('error', (parseErr) => {
-        console.error(`Error reading ${filePath}:`, parseErr);
-        reject(parseErr);
+      pipeline.on('error', (err) => {
+        console.error(`Error parsing ${fileName}:`, err);
+        reject(err);
       });
     });
   });
+
+  return singleFileCars;
 }
 
-async function loadAllCars() {
-  // Use cache if available
-  if (dataCache) return dataCache;
-
-  const dataDir = path.join(__dirname, 'data');
-
-  // List of JSON files to load
-  const fileNames = [
-    'cars.json',
-    'carsparking.json',
-    'caaarrssssss.json',
-    'openlane.json',
-    'hertzcars.json',
-    'cargr.json',
-    'autoscoutcars.json',
-    'aclass.json',
-    'kleinanzegencars.json',
-    'carsbg_part_1.json',
-    'carsbg_part_2.json',
-    'carsbg_part_3.json',
-    'carsbg_part_4.json',
-  ];
-
+/**
+ * loadAllCars(filterCallback)
+ *  - Loads all files defined in fileNames serially.
+ *  - Concatenates and returns all matching car records.
+ */
+async function loadAllCars(filterCallback = () => true) {
   let allCars = [];
-
-  // Process files sequentially to reduce simultaneous memory usage
-  for (const fileName of fileNames) {
-    const filePath = path.join(dataDir, fileName);
-    const mapper = mapperLookup[fileName] || mapCarsJson; // use default mapper if none specified
+  for (let i = 0; i < fileNames.length; i++) {
     try {
-      const cars = await loadCarsFromFileInChunks(filePath, mapper);
-      console.log(`${fileName} entries mapped: ${cars.length}`);
-      allCars = allCars.concat(cars);
-      // Small delay to help GC (optional)
-      await new Promise((resolve) => setTimeout(resolve, 10));
-    } catch (err) {
-      console.error(`Error reading ${filePath}:`, err);
+      const carsFromFile = await loadSingleFileCars(i, filterCallback);
+      allCars = allCars.concat(carsFromFile);
+      // Optionally log or free any temporary resources here
+    } catch (error) {
+      console.error(`Error loading file index ${i}:`, error);
     }
   }
-
-  // Sort so that cars with images come first
-  allCars.sort((a, b) => {
-    if (a.hasImage && !b.hasImage) return -1;
-    if (!a.hasImage && b.hasImage) return 1;
-    return 0;
-  });
-
-  console.log(`Total Cars Loaded: ${allCars.length}`);
-  console.log(`Cars with Images: ${allCars.filter((car) => car.hasImage).length}`);
-  console.log(`Cars without Images: ${allCars.filter((car) => !car.hasImage).length}`);
-
-  // Optional: unify brand names
-  allCars.forEach((car) => {
-    if (!car.brand) {
-      car.brand = 'Unknown';
-      return;
-    }
-    const lowerBrand = car.brand.trim().toLowerCase();
-    if (lowerBrand.includes('mercedes')) {
-      car.brand = 'Mercedes-Benz';
-    }
-    // More unification rules as needed...
-  });
-
-  dataCache = allCars; // Cache the result for future calls
   return allCars;
+}
+
+/**
+ * loadParkingCars(filterCallback)
+ *  - Loads only parking cars from the "carsparking.json" file.
+ *  - Returns an array of matching parking cars.
+ */
+async function loadParkingCars(filterCallback = () => true) {
+  const parkingFileName = 'carsparking.json';
+  const index = fileNames.findIndex(name => name === parkingFileName);
+  if (index === -1) {
+    console.warn(`${parkingFileName} not found in fileNames.`);
+    return [];
+  }
+  return await loadSingleFileCars(index, filterCallback);
+}
+
+/**
+ * clearMemory() - Clears an array reference.
+ */
+function clearMemory(arrayRef) {
+  arrayRef.length = 0;
 }
 
 module.exports = {
   loadAllCars,
+  loadSingleFileCars,
+  loadParkingCars,
+  clearMemory,
+  fileNames,
 };
